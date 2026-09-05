@@ -8,39 +8,82 @@
   function pdfEscape(str){const b=binaryEncode(str).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)').replace(/[\r\n]+/g,' ');return b;}
   function safe(str){return String(str??'').normalize('NFC').replace(/[\u0000-\u001F]/g,' ')}
   function text(x,y,size,font,str){return `BT /${font} ${size.toFixed(2)} Tf 1 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)} Tm (${pdfEscape(safe(str))}) Tj ET\n`;}
-  function approxWidth(str,size,bold=false){let units=0;for(const ch of safe(str)){if('MW@#%'.includes(ch))units+=0.88;else if('ilI1.,:;|'.includes(ch))units+=0.28;else if(ch===' ')units+=0.28;else units+=bold?0.58:0.53;}return units*size;}
-  function fitSize(str,maxW,start,min,bold=true){let s=start;while(s>min && approxWidth(str,s,bold)>maxW)s-=0.25;return Math.max(min,s)}
-  function wrap(str,maxW,size,bold=true,maxLines=2){const words=safe(str).trim().split(/\s+/).filter(Boolean);if(!words.length)return [''];const lines=[];let line='';for(const w of words){const test=line?line+' '+w:w;if(approxWidth(test,size,bold)<=maxW||!line){line=test}else{lines.push(line);line=w;if(lines.length===maxLines-1)break}}if(line&&lines.length<maxLines)lines.push(line);if(words.join(' ').length>lines.join(' ').length){let last=lines[maxLines-1]||'';while(last.length>1&&approxWidth(last+'…',size,bold)>maxW)last=last.slice(0,-1);lines[maxLines-1]=last+'…'}return lines.slice(0,maxLines)}
+  function approxWidth(str,size,bold=false){let units=0;for(const ch of safe(str)){if('MW@#%'.includes(ch))units+=0.88;else if('ilI1.,:;|/'.includes(ch))units+=0.28;else if(ch===' ')units+=0.28;else units+=bold?0.58:0.53;}return units*size;}
+  function fitSize(str,maxW,start,min,bold=true){let s=start;while(s>min && approxWidth(str,s,bold)>maxW)s-=0.20;return Math.max(min,s)}
+  function wrap(str,maxW,size,bold=true,maxLines=2){
+    const words=safe(str).trim().split(/\s+/).filter(Boolean);if(!words.length)return [''];
+    const lines=[];let line='';let used=0;
+    for(let i=0;i<words.length;i++){
+      const w=words[i],test=line?line+' '+w:w;
+      if(approxWidth(test,size,bold)<=maxW||!line){line=test;used=i+1;}
+      else{lines.push(line);line=w;used=i+1;if(lines.length===maxLines-1)break;}
+    }
+    if(line&&lines.length<maxLines)lines.push(line);
+    if(used<words.length){
+      let last=lines[maxLines-1]||'';
+      const rest=(last+' '+words.slice(used).join(' ')).trim();
+      last=rest;
+      while(last.length>1&&approxWidth(last+'…',size,bold)>maxW)last=last.slice(0,-1);
+      lines[maxLines-1]=last.replace(/[\s,;:-]+$/,'')+'…';
+    }
+    return lines.slice(0,maxLines);
+  }
   function labelContent(l){
-    const m=4.2, inner=W-2*m;
-    let c='0 G 0 g\n0.55 w\n';
-    c += `${1.2} ${1.2} ${(W-2.4).toFixed(2)} ${(H-2.4).toFixed(2)} re S\n`;
+    // Version "grande lisibilité" : marges réduites et texte agrandi.
+    const m=3.2, inner=W-2*m;
+    let c='0 G 0 g\n0.70 w\n';
+    c += `1.00 1.00 ${(W-2).toFixed(2)} ${(H-2).toFixed(2)} re S\n`;
+
     const product=(l.product||'PRODUIT').toUpperCase();
-    let pSize=fitSize(product,inner,11.2,7.6,true);
-    let lines=wrap(product,inner,pSize,true,2);
-    if(lines.length===2 && (approxWidth(lines[0],pSize,true)>inner || approxWidth(lines[1],pSize,true)>inner)){pSize=7.6;lines=wrap(product,inner,pSize,true,2)}
-    let y=H-12.0;
-    for(const line of lines){c+=text(m,y,pSize,'F1',line);y-=pSize+0.8}
+    let pSize=13.6, lines;
+    if(approxWidth(product,pSize,true)<=inner){
+      lines=[product];
+    }else{
+      pSize=11.4;
+      lines=wrap(product,inner,pSize,true,2);
+      while(pSize>9.4 && lines.some(line=>approxWidth(line,pSize,true)>inner)){
+        pSize-=0.2;
+        lines=wrap(product,inner,pSize,true,2);
+      }
+    }
+
+    let y=H-10.0;
+    for(const line of lines){
+      c+=text(m,y,pSize,'F1',line);
+      y-=pSize+0.45;
+    }
+
     const mode=(l.type||'PRODUCTION').toUpperCase();
-    c += text(m, y-0.6, 5.0, 'F2', mode);
-    y -= 7.4;
-    c += `${m.toFixed(2)} ${y.toFixed(2)} ${inner.toFixed(2)} 0 l S\n`;
-    y -= 7.2;
-    c += text(m,y,4.7,'F2',l.dateLabel||'DATE');
-    c += text(W/2+1.8,y,4.7,'F2',l.expiryLabel||'DLC');
-    y -= 8.2;
-    c += text(m,y,8.0,'F1',l.date||'--/--/----');
-    c += text(W/2+1.8,y,8.0,'F1',l.dlc||'--/--/----');
-    y -= 8.1;
+    const modeY=lines.length===1 ? 56.8 : Math.max(49.7,y-0.2);
+    c += text(m,modeY,6.2,'F2',mode);
+
+    const dividerY=45.8;
+    c += `${m.toFixed(2)} ${dividerY.toFixed(2)} ${inner.toFixed(2)} 0 l S\n`;
+
+    const col2=W/2+1.5;
+    const halfW=W/2-m-2.2;
+    c += text(m,38.8,5.5,'F2',l.dateLabel||'DATE');
+    c += text(col2,38.8,5.5,'F2',l.expiryLabel||'DLC');
+
+    const ds1=fitSize(l.date||'--/--/----',halfW,9.4,8.2,true);
+    const ds2=fitSize(l.dlc||'--/--/----',halfW,9.4,8.2,true);
+    c += text(m,28.8,ds1,'F1',l.date||'--/--/----');
+    c += text(col2,28.8,ds2,'F1',l.dlc||'--/--/----');
+
     const lot = l.lot ? `Lot : ${l.lot}` : 'Lot : —';
     const initials = l.initials ? String(l.initials).toUpperCase() : '—';
-    c += text(m,y,4.9,'F2',lot);
-    const iw=approxWidth(initials,5.6,true); c += text(W-m-iw,y,5.6,'F1',initials);
-    y -= 6.1;
+    const lotSize=fitSize(lot,W-2*m-20,6.0,4.7,false);
+    c += text(m,18.7,lotSize,'F2',lot);
+    const iSize=fitSize(initials,19,7.0,5.8,true);
+    const iw=approxWidth(initials,iSize,true);
+    c += text(W-m-iw,18.7,iSize,'F1',initials);
+
     if(l.storage){
-      const ss=fitSize(l.storage,inner,4.7,3.7,false); c+=text(m,y,ss,'F2',l.storage);
+      const ss=fitSize(l.storage,inner,5.7,4.5,false);
+      c+=text(m,10.7,ss,'F2',l.storage);
     } else if(l.note){
-      const ns=fitSize(l.note,inner,4.4,3.5,false); c+=text(m,y,ns,'F2',l.note);
+      const ns=fitSize(l.note,inner,5.4,4.3,false);
+      c+=text(m,10.7,ns,'F2',l.note);
     }
     return c;
   }
