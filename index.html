@@ -20,7 +20,7 @@
 
   <main>
     <section class="view active" data-view="print">
-      <div class="status-strip"><span class="dot"></span><strong>PDF direct</strong><span>Excel supprimé du circuit</span></div>
+      <div class="status-strip"><span class="dot"></span><strong>PDF temporaire</strong><span>Envoi direct via iPhone</span></div>
 
       <div id="quickWrap" class="quick-wrap hidden">
         <div class="section-mini"><strong>Accès rapide</strong><span>Favoris + récents</span></div>
@@ -71,14 +71,15 @@
           <div class="stepper"><button id="qtyMinus" aria-label="Diminuer">−</button><strong id="qtyValue">1</strong><button id="qtyPlus" aria-label="Augmenter">+</button></div>
         </div>
 
-        <button id="printNowBtn" class="primary-btn full big-action">Créer & partager le PDF</button>
+        <button id="printNowBtn" class="primary-btn full big-action">Envoyer vers Print Master</button>
+        <button type="button" onclick="printCurrent(false)" class="secondary-btn full">Enregistrer une copie PDF</button>
         <button id="addBatchBtn" class="secondary-btn full">Ajouter au lot multi-produits</button>
-        <div class="microcopy center">Sur iPhone : partage le PDF vers Print Master, puis utilise <strong>Impression PDF</strong>.</div>
+        <div class="microcopy center">Sur iPhone : touche <strong>Envoyer vers Print Master</strong>, puis dans la feuille iOS choisis <strong>Enregistrer dans…</strong> → <strong>Print Master</strong>. Le PDF n’est enregistré dans Fichiers que si tu choisis volontairement « Enregistrer une copie ».</div>
       </div>
 
       <div class="section-heading"><div><h2>Lot multi-produits</h2><p id="batchSummary">0 étiquette</p></div><button class="text-btn danger" id="clearBatchBtn">Vider</button></div>
       <div id="batchList" class="stack empty-state"><p>Aucune étiquette préparée.</p></div>
-      <div class="sticky-actions"><button id="printBatchBtn" class="primary-btn full" disabled>Créer le PDF du lot</button><button id="savePdfBtn" class="secondary-btn full" disabled>Enregistrer le PDF</button></div>
+      <div class="sticky-actions"><button id="printBatchBtn" class="primary-btn full" disabled>Envoyer le lot vers Print Master</button><button id="savePdfBtn" class="secondary-btn full" disabled>Enregistrer une copie du lot</button></div>
     </section>
 
     <section class="view" data-view="products">
@@ -96,8 +97,9 @@
     </section>
 
     <section class="view" data-view="help">
-      <div class="section-heading top"><div><h2>Utilisation avec Print Master</h2><p>Le chemin le plus court.</p></div></div>
-      <div class="card steps-card"><ol><li>Prépare l’étiquette ici.</li><li>Touche <strong>Créer & partager le PDF</strong>.</li><li>Dans la feuille de partage iOS, choisis <strong>Print Master</strong> si proposé. Sinon enregistre le PDF.</li><li>Dans Print Master, ouvre <strong>Impression PDF</strong> et sélectionne le fichier.</li><li>Vérifie <strong>40 × 30 mm</strong>, échelle 100 %, puis imprime.</li></ol></div>
+      <div class="section-heading top"><div><h2>Utilisation avec Print Master</h2><p>Le chemin le plus court sur iPhone.</p></div></div>
+      <div class="card steps-card"><ol><li>Prépare ton étiquette.</li><li>Touche <strong>Envoyer vers Print Master</strong>.</li><li>Dans la feuille de partage iOS, choisis <strong>Enregistrer dans…</strong>.</li><li>Sélectionne <strong>Print Master</strong> comme destination.</li><li>Dans Print Master, ouvre <strong>Impression PDF</strong>, vérifie <strong>40 × 30 mm</strong> et imprime.</li></ol></div>
+      <div class="card warning-card"><h3>Pas d’encombrement inutile</h3><p>L’envoi principal utilise un PDF temporaire pour la feuille de partage. Le bouton « Enregistrer une copie PDF » est réservé aux cas où tu veux réellement conserver le fichier.</p></div>
       <div class="card warning-card"><h3>PMS / HACCP</h3><p>Les durées sont volontairement sous ton contrôle. L’application calcule une échéance à partir des règles que tu as saisies ; elle ne détermine pas elle-même la durée sanitaire d’un produit.</p></div>
     </section>
   </main>
