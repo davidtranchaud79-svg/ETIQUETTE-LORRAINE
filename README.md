@@ -1,6 +1,6 @@
-# DLC Cuisine V3 — 40 × 30 mm
+# Étiquette Lorraine — DLC 40 × 30 mm
 
-Cette version supprime Excel du flux quotidien. Elle génère directement sur l’iPhone un PDF dont chaque page mesure exactement 40 × 30 mm.
+Application mobile/PWA pour préparer des étiquettes DLC en cuisine et générer directement un PDF dont chaque page mesure exactement **40 × 30 mm**, prêt à être ouvert dans **Print Master**.
 
 ## Flux recommandé
 1. Choisir le produit.
@@ -12,17 +12,17 @@ Cette version supprime Excel du flux quotidien. Elle génère directement sur l�
 
 ## Fonctions
 - PDF 40 × 30 mm natif, sans Excel.
-- Un PDF multipage pour plusieurs étiquettes.
+- PDF multipage pour plusieurs étiquettes.
 - Base produits avec 3 règles : production, ouverture, décongélation.
-- Favoris et récents.
-- Lot, initiales mémorisées, conservation/température.
+- Favoris et produits récents.
+- Lot, initiales mémorisées et conservation/température.
 - Lot multi-produits.
 - Historique local et export CSV.
 - Verrou local des règles PMS.
-- PWA installable et utilisable hors ligne après première ouverture.
+- PWA installable et utilisable hors ligne après la première ouverture.
 
-## Mise en ligne GitHub Pages
-Déposer le contenu de ce dossier à la racine d’un dépôt GitHub, puis activer GitHub Pages sur la branche principale.
+## GitHub Pages
+Le site est prévu pour être publié directement depuis la branche `main` à la racine du dépôt.
 
 ## Important
-Les durées de conservation doivent être renseignées selon le PMS/HACCP de l’établissement. L’application ne définit aucune durée sanitaire par défaut.
+Les durées de conservation doivent être renseignées selon le PMS/HACCP de l’établissement. L’application calcule les échéances à partir des règles saisies ; elle ne définit aucune durée sanitaire par défaut.
