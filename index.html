@@ -112,7 +112,7 @@
 
 <dialog id="productDialog" class="modal">
   <form method="dialog" id="productForm" class="modal-card">
-    <div class="modal-head"><h2 id="productDialogTitle">Nouveau produit</h2><button value="cancel" class="close-btn">×</button></div>
+    <div class="modal-head"><h2 id="productDialogTitle">Nouveau produit</h2><button type="button" data-close-dialog="productDialog" onclick="const d=this.closest('dialog');document.activeElement?.blur();requestAnimationFrame(()=>d?.open&&d.close('cancel'))" class="close-btn" aria-label="Fermer">×</button></div>
     <input type="hidden" id="productId" />
     <label class="field-label" for="productName">Produit</label><input id="productName" class="input" required maxlength="80" />
     <label class="field-label" for="productCategory">Catégorie</label><input id="productCategory" class="input" maxlength="40" placeholder="Sauce, poisson, garniture…" />
@@ -123,24 +123,24 @@
     </div>
     <label class="field-label" for="productStorage">Conservation</label><input id="productStorage" class="input" maxlength="50" placeholder="Ex. Conservation : +0/+3 °C" />
     <label class="favorite-check"><input id="productFavorite" type="checkbox" /> <span>Mettre en favori</span></label>
-    <div class="modal-actions"><button value="cancel" class="secondary-btn">Annuler</button><button id="saveProductBtn" value="default" class="primary-btn">Enregistrer</button></div>
+    <div class="modal-actions"><button type="button" data-close-dialog="productDialog" onclick="const d=this.closest('dialog');document.activeElement?.blur();requestAnimationFrame(()=>d?.open&&d.close('cancel'))" class="secondary-btn">Annuler</button><button id="saveProductBtn" type="submit" class="primary-btn">Enregistrer</button></div>
   </form>
 </dialog>
 
 <dialog id="serviceDialog" class="modal small-modal">
   <form method="dialog" id="serviceForm" class="modal-card">
-    <div class="modal-head"><h2>Début de service</h2><button value="cancel" class="close-btn">×</button></div>
+    <div class="modal-head"><h2>Début de service</h2><button type="button" data-close-dialog="serviceDialog" onclick="const d=this.closest('dialog');document.activeElement?.blur();requestAnimationFrame(()=>d?.open&&d.close('cancel'))" class="close-btn" aria-label="Fermer">×</button></div>
     <p class="modal-copy">Renseigne tes initiales une fois. Elles seront reprises sur chaque étiquette.</p>
     <label class="field-label" for="serviceInitials">Initiales</label><input id="serviceInitials" class="input pin-input" maxlength="8" autocapitalize="characters" placeholder="DT" />
-    <div class="modal-actions"><button value="cancel" class="secondary-btn">Annuler</button><button value="default" class="primary-btn">Valider</button></div>
+    <div class="modal-actions"><button type="button" data-close-dialog="serviceDialog" onclick="const d=this.closest('dialog');document.activeElement?.blur();requestAnimationFrame(()=>d?.open&&d.close('cancel'))" class="secondary-btn">Annuler</button><button type="submit" class="primary-btn">Valider</button></div>
   </form>
 </dialog>
 
 <dialog id="pinDialog" class="modal small-modal">
   <form method="dialog" id="pinForm" class="modal-card">
-    <div class="modal-head"><h2 id="pinTitle">Code administrateur</h2><button value="cancel" class="close-btn">×</button></div>
+    <div class="modal-head"><h2 id="pinTitle">Code administrateur</h2><button type="button" data-close-dialog="pinDialog" onclick="const d=this.closest('dialog');document.activeElement?.blur();requestAnimationFrame(()=>d?.open&&d.close('cancel'))" class="close-btn" aria-label="Fermer">×</button></div>
     <p id="pinText" class="modal-copy"></p><input id="pinInput" class="input pin-input" type="password" inputmode="numeric" maxlength="6" />
-    <div class="modal-actions"><button value="cancel" class="secondary-btn">Annuler</button><button value="default" class="primary-btn">Valider</button></div>
+    <div class="modal-actions"><button type="button" data-close-dialog="pinDialog" onclick="const d=this.closest('dialog');document.activeElement?.blur();requestAnimationFrame(()=>d?.open&&d.close('cancel'))" class="secondary-btn">Annuler</button><button type="submit" class="primary-btn">Valider</button></div>
   </form>
 </dialog>
 
