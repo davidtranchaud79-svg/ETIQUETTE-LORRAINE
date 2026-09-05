@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#671b32" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Étiquette Lorraine" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>Étiquette Lorraine — DLC 40×30</title>
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <div><div class="eyebrow">ÉTIQUETTES 40 × 30 MM</div><h1>Étiquette Lorraine</h1></div>
+    <button class="ghost-btn" id="serviceBtn">Service</button>
+  </header>
+
+  <main>
+    <section class="view active" data-view="print">
+      <div class="status-strip"><span class="dot"></span><strong>PDF direct</strong><span>Excel supprimé du circuit</span></div>
+
+      <div id="quickWrap" class="quick-wrap hidden">
+        <div class="section-mini"><strong>Accès rapide</strong><span>Favoris + récents</span></div>
+        <div id="quickProducts" class="quick-products"></div>
+      </div>
+
+      <div class="card main-card">
+        <label class="field-label">Produit</label>
+        <div class="autocomplete-wrap">
+          <input id="productSearch" class="input product-input" type="search" autocomplete="off" placeholder="Rechercher un produit…" />
+          <div id="suggestions" class="suggestions hidden"></div>
+        </div>
+
+        <div class="mode-tabs" id="modeTabs">
+          <button data-mode="production" class="active">Production</button>
+          <button data-mode="opening">Ouverture</button>
+          <button data-mode="defrost">Décongélation</button>
+        </div>
+
+        <div class="date-row">
+          <div><label class="field-label" for="eventDate">Date de départ</label><input id="eventDate" class="input" type="date" /></div>
+          <div><label class="field-label">Règle PMS</label><div class="duration-box"><strong id="durationValue">—</strong><span>jour(s)</span></div></div>
+        </div>
+
+        <div id="expiryBox" class="expiry-box neutral">
+          <div><span id="expiryLabel">DLC / limite</span><strong id="dlcValue">—</strong></div>
+          <small id="ruleHint">Sélectionne un produit.</small>
+        </div>
+
+        <div class="label-preview-wrap">
+          <div class="label-preview" id="labelPreview">
+            <div class="lp-product" id="lpProduct">NOM DU PRODUIT</div>
+            <div class="lp-mode" id="lpMode">PRODUCTION</div>
+            <div class="lp-rule"></div>
+            <div class="lp-grid"><div><span>DATE</span><strong id="lpDate">--/--/----</strong></div><div><span>DLC</span><strong id="lpDlc">--/--/----</strong></div></div>
+            <div class="lp-bottom"><span id="lpLot">Lot : —</span><span id="lpInitials">—</span></div>
+            <div class="lp-temp" id="lpTemp"></div>
+          </div>
+        </div>
+
+        <div class="extras-grid">
+          <div><label class="field-label" for="lot">Lot</label><input id="lot" class="input" type="text" maxlength="28" placeholder="Facultatif" /></div>
+          <div><label class="field-label" for="initials">Initiales</label><input id="initials" class="input" type="text" maxlength="8" placeholder="DT" autocapitalize="characters" /></div>
+        </div>
+
+        <div class="quantity-row">
+          <div><span>Nombre d’étiquettes</span><small>1 page PDF = 1 étiquette</small></div>
+          <div class="stepper"><button id="qtyMinus" aria-label="Diminuer">−</button><strong id="qtyValue">1</strong><button id="qtyPlus" aria-label="Augmenter">+</button></div>
+        </div>
+
+        <button id="printNowBtn" class="primary-btn full big-action">Créer & partager le PDF</button>
+        <button id="addBatchBtn" class="secondary-btn full">Ajouter au lot multi-produits</button>
+        <div class="microcopy center">Sur iPhone : partage le PDF vers Print Master, puis utilise <strong>Impression PDF</strong>.</div>
+      </div>
+
+      <div class="section-heading"><div><h2>Lot multi-produits</h2><p id="batchSummary">0 étiquette</p></div><button class="text-btn danger" id="clearBatchBtn">Vider</button></div>
+      <div id="batchList" class="stack empty-state"><p>Aucune étiquette préparée.</p></div>
+      <div class="sticky-actions"><button id="printBatchBtn" class="primary-btn full" disabled>Créer le PDF du lot</button><button id="savePdfBtn" class="secondary-btn full" disabled>Enregistrer le PDF</button></div>
+    </section>
+
+    <section class="view" data-view="products">
+      <div class="section-heading top"><div><h2>Base produits</h2><p>Règles validées dans ton PMS.</p></div><button class="primary-btn compact" id="newProductBtn">+ Produit</button></div>
+      <div class="card compact-card"><input id="productFilter" class="input" type="search" placeholder="Rechercher un produit ou une catégorie…" /></div>
+      <div id="productsList" class="stack"></div>
+      <div class="card tools-card"><h3>Sauvegarde</h3><p>Exporte la base avant une grosse modification ou pour la transférer sur un autre iPhone.</p><div class="button-row"><button id="exportProductsBtn" class="secondary-btn">Exporter JSON</button><label class="secondary-btn file-btn">Importer JSON<input type="file" id="importProductsInput" accept="application/json,.json" /></label></div></div>
+      <div class="card admin-card"><h3>Verrou PMS</h3><p>Empêche les changements accidentels des durées.</p><div class="admin-row"><div><strong id="adminStatus">Non verrouillé</strong><small>Code local à 4–6 chiffres.</small></div><button id="adminToggleBtn" class="secondary-btn">Activer</button></div></div>
+    </section>
+
+    <section class="view" data-view="history">
+      <div class="section-heading top"><div><h2>Historique local</h2><p>PDF créés sur cet appareil.</p></div><button class="text-btn danger" id="clearHistoryBtn">Effacer</button></div>
+      <div class="card compact-card history-tools"><button id="exportHistoryBtn" class="secondary-btn full">Exporter l’historique CSV</button></div>
+      <div id="historyList" class="stack empty-state"><p>Aucun PDF créé.</p></div>
+    </section>
+
+    <section class="view" data-view="help">
+      <div class="section-heading top"><div><h2>Utilisation avec Print Master</h2><p>Le chemin le plus court.</p></div></div>
+      <div class="card steps-card"><ol><li>Prépare l’étiquette ici.</li><li>Touche <strong>Créer & partager le PDF</strong>.</li><li>Dans la feuille de partage iOS, choisis <strong>Print Master</strong> si proposé. Sinon enregistre le PDF.</li><li>Dans Print Master, ouvre <strong>Impression PDF</strong> et sélectionne le fichier.</li><li>Vérifie <strong>40 × 30 mm</strong>, échelle 100 %, puis imprime.</li></ol></div>
+      <div class="card warning-card"><h3>PMS / HACCP</h3><p>Les durées sont volontairement sous ton contrôle. L’application calcule une échéance à partir des règles que tu as saisies ; elle ne détermine pas elle-même la durée sanitaire d’un produit.</p></div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-target="print"><span>🏷️</span>Étiquettes</button>
+    <button class="nav-btn" data-target="products"><span>📦</span>Produits</button>
+    <button class="nav-btn" data-target="history"><span>🕘</span>Historique</button>
+    <button class="nav-btn" data-target="help"><span>?</span>Aide</button>
+  </nav>
+</div>
+
+<dialog id="productDialog" class="modal">
+  <form method="dialog" id="productForm" class="modal-card">
+    <div class="modal-head"><h2 id="productDialogTitle">Nouveau produit</h2><button value="cancel" class="close-btn">×</button></div>
+    <input type="hidden" id="productId" />
+    <label class="field-label" for="productName">Produit</label><input id="productName" class="input" required maxlength="80" />
+    <label class="field-label" for="productCategory">Catégorie</label><input id="productCategory" class="input" maxlength="40" placeholder="Sauce, poisson, garniture…" />
+    <div class="rules-grid">
+      <div><label class="field-label" for="daysProduction">Production</label><div class="suffix-input"><input id="daysProduction" class="input" type="number" min="0" max="365" inputmode="numeric" /><span>j</span></div></div>
+      <div><label class="field-label" for="daysOpening">Ouverture</label><div class="suffix-input"><input id="daysOpening" class="input" type="number" min="0" max="365" inputmode="numeric" /><span>j</span></div></div>
+      <div><label class="field-label" for="daysDefrost">Décongélation</label><div class="suffix-input"><input id="daysDefrost" class="input" type="number" min="0" max="365" inputmode="numeric" /><span>j</span></div></div>
+    </div>
+    <label class="field-label" for="productStorage">Conservation</label><input id="productStorage" class="input" maxlength="50" placeholder="Ex. Conservation : +0/+3 °C" />
+    <label class="favorite-check"><input id="productFavorite" type="checkbox" /> <span>Mettre en favori</span></label>
+    <div class="modal-actions"><button value="cancel" class="secondary-btn">Annuler</button><button id="saveProductBtn" value="default" class="primary-btn">Enregistrer</button></div>
+  </form>
+</dialog>
+
+<dialog id="serviceDialog" class="modal small-modal">
+  <form method="dialog" id="serviceForm" class="modal-card">
+    <div class="modal-head"><h2>Début de service</h2><button value="cancel" class="close-btn">×</button></div>
+    <p class="modal-copy">Renseigne tes initiales une fois. Elles seront reprises sur chaque étiquette.</p>
+    <label class="field-label" for="serviceInitials">Initiales</label><input id="serviceInitials" class="input pin-input" maxlength="8" autocapitalize="characters" placeholder="DT" />
+    <div class="modal-actions"><button value="cancel" class="secondary-btn">Annuler</button><button value="default" class="primary-btn">Valider</button></div>
+  </form>
+</dialog>
+
+<dialog id="pinDialog" class="modal small-modal">
+  <form method="dialog" id="pinForm" class="modal-card">
+    <div class="modal-head"><h2 id="pinTitle">Code administrateur</h2><button value="cancel" class="close-btn">×</button></div>
+    <p id="pinText" class="modal-copy"></p><input id="pinInput" class="input pin-input" type="password" inputmode="numeric" maxlength="6" />
+    <div class="modal-actions"><button value="cancel" class="secondary-btn">Annuler</button><button value="default" class="primary-btn">Valider</button></div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast"></div>
+<script src="pdf40x30.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
