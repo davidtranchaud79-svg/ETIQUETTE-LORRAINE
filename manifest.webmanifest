@@ -1,0 +1,8 @@
+{
+  "name": "Étiquette Lorraine 40x30",
+  "short_name": "Étiquette",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f4f2",
+  "theme_color": "#671b32"
+}
