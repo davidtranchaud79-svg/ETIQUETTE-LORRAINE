@@ -1,4 +1,4 @@
-const CACHE='etiquette-lorraine-v6-offline';
+const CACHE='etiquette-lorraine-v7-network-status';
 const CORE=[
   './',
   './index.html',
@@ -6,7 +6,8 @@ const CORE=[
   './styles.css',
   './app.js',
   './pdf40x30.js',
-  './freeze-module.js'
+  './freeze-module.js',
+  './network-status.js'
 ];
 
 self.addEventListener('install',event=>{
@@ -41,25 +42,29 @@ async function networkThenCache(request){
 }
 
 async function combinedApp(request){
-  let appText,freezeText;
+  let appText,freezeText,statusText;
   try{
-    const [appResponse,freezeResponse]=await Promise.all([
+    const [appResponse,freezeResponse,statusResponse]=await Promise.all([
       fetch(request,{cache:'no-store'}),
-      fetch(new URL('./freeze-module.js',request.url),{cache:'no-store'})
+      fetch(new URL('./freeze-module.js',request.url),{cache:'no-store'}),
+      fetch(new URL('./network-status.js',request.url),{cache:'no-store'})
     ]);
-    if(!appResponse.ok || !freezeResponse.ok) throw new Error('Réseau indisponible');
+    if(!appResponse.ok || !freezeResponse.ok || !statusResponse.ok) throw new Error('Réseau indisponible');
     appText=await appResponse.text();
     freezeText=await freezeResponse.text();
+    statusText=await statusResponse.text();
 
     const cache=await caches.open(CACHE);
     cache.put('./app.js',new Response(appText,{headers:{'Content-Type':'application/javascript; charset=utf-8'}})).catch(()=>{});
     cache.put('./freeze-module.js',new Response(freezeText,{headers:{'Content-Type':'application/javascript; charset=utf-8'}})).catch(()=>{});
+    cache.put('./network-status.js',new Response(statusText,{headers:{'Content-Type':'application/javascript; charset=utf-8'}})).catch(()=>{});
   }catch(_){
     appText=await cachedText('./app.js');
     freezeText=await cachedText('./freeze-module.js');
+    statusText=await cachedText('./network-status.js');
   }
 
-  return new Response(appText+'\n\n'+freezeText,{
+  return new Response(appText+'\n\n'+freezeText+'\n\n'+statusText,{
     status:200,
     headers:{
       'Content-Type':'application/javascript; charset=utf-8',
@@ -75,7 +80,8 @@ self.addEventListener('fetch',event=>{
   const url=new URL(request.url);
   if(url.origin!==self.location.origin) return;
 
-  // app.js inclut automatiquement le module Congélation, en ligne comme hors ligne.
+  // app.js inclut automatiquement les modules Congélation et état réseau,
+  // en ligne comme hors ligne.
   if(url.pathname.endsWith('/app.js')){
     event.respondWith(combinedApp(request));
     return;
