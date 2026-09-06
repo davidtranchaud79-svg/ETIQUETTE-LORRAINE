@@ -1,60 +1,115 @@
-const CACHE='etiquette-lorraine-v5';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./styles.css','./app.js','./pdf40x30.js','./freeze-module.js'];
+const CACHE='etiquette-lorraine-v6-offline';
+const CORE=[
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './styles.css',
+  './app.js',
+  './pdf40x30.js',
+  './freeze-module.js'
+];
 
-self.addEventListener('install',e=>e.waitUntil(
-  caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())
-));
+self.addEventListener('install',event=>{
+  event.waitUntil((async()=>{
+    const cache=await caches.open(CACHE);
+    await cache.addAll(CORE);
+    await self.skipWaiting();
+  })());
+});
 
-self.addEventListener('activate',e=>e.waitUntil(
-  caches.keys()
-    .then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
-    .then(()=>self.clients.claim())
-));
+self.addEventListener('activate',event=>{
+  event.waitUntil((async()=>{
+    const keys=await caches.keys();
+    await Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
 
-async function textFromNetworkOrCache(request,fallbackUrl){
-  try{
-    const r=await fetch(request);
-    if(r.ok){
-      const clone=r.clone();
-      caches.open(CACHE).then(c=>c.put(request,clone));
-      return await r.text();
-    }
-  }catch(_){ }
-  const cached=await caches.match(request) || await caches.match(fallbackUrl);
-  if(!cached) throw new Error('Ressource indisponible');
-  return await cached.text();
+async function cachedText(url){
+  const response=await caches.match(url,{ignoreSearch:true});
+  if(!response) throw new Error('Ressource hors ligne absente : '+url);
+  return response.text();
 }
 
-self.addEventListener('fetch',e=>{
-  if(e.request.method!=='GET')return;
-  const url=new URL(e.request.url);
+async function networkThenCache(request){
+  const response=await fetch(request);
+  if(response && response.ok){
+    const cache=await caches.open(CACHE);
+    cache.put(request,response.clone()).catch(()=>{});
+  }
+  return response;
+}
 
-  // Charge app.js puis ajoute le module Congélation 3 mois dans le même script.
-  // Cela permet de mettre à jour l'application installée sans casser le reste.
+async function combinedApp(request){
+  let appText,freezeText;
+  try{
+    const [appResponse,freezeResponse]=await Promise.all([
+      fetch(request,{cache:'no-store'}),
+      fetch(new URL('./freeze-module.js',request.url),{cache:'no-store'})
+    ]);
+    if(!appResponse.ok || !freezeResponse.ok) throw new Error('Réseau indisponible');
+    appText=await appResponse.text();
+    freezeText=await freezeResponse.text();
+
+    const cache=await caches.open(CACHE);
+    cache.put('./app.js',new Response(appText,{headers:{'Content-Type':'application/javascript; charset=utf-8'}})).catch(()=>{});
+    cache.put('./freeze-module.js',new Response(freezeText,{headers:{'Content-Type':'application/javascript; charset=utf-8'}})).catch(()=>{});
+  }catch(_){
+    appText=await cachedText('./app.js');
+    freezeText=await cachedText('./freeze-module.js');
+  }
+
+  return new Response(appText+'\n\n'+freezeText,{
+    status:200,
+    headers:{
+      'Content-Type':'application/javascript; charset=utf-8',
+      'Cache-Control':'no-store'
+    }
+  });
+}
+
+self.addEventListener('fetch',event=>{
+  const request=event.request;
+  if(request.method!=='GET') return;
+
+  const url=new URL(request.url);
+  if(url.origin!==self.location.origin) return;
+
+  // app.js inclut automatiquement le module Congélation, en ligne comme hors ligne.
   if(url.pathname.endsWith('/app.js')){
-    e.respondWith((async()=>{
+    event.respondWith(combinedApp(request));
+    return;
+  }
+
+  // Navigation : réseau si disponible, sinon copie locale de l'application.
+  if(request.mode==='navigate'){
+    event.respondWith((async()=>{
       try{
-        const [app,freeze]=await Promise.all([
-          textFromNetworkOrCache(e.request,'./app.js'),
-          textFromNetworkOrCache(new Request(new URL('./freeze-module.js',e.request.url)),'./freeze-module.js')
-        ]);
-        return new Response(app+'\n\n'+freeze,{
-          headers:{'Content-Type':'application/javascript; charset=utf-8','Cache-Control':'no-cache'}
-        });
+        const response=await networkThenCache(request);
+        return response;
       }catch(_){
-        return caches.match('./app.js');
+        return await caches.match('./index.html') || await caches.match('./');
       }
     })());
     return;
   }
 
-  e.respondWith(
-    fetch(e.request)
-      .then(resp=>{
-        const clone=resp.clone();
-        caches.open(CACHE).then(c=>c.put(e.request,clone));
-        return resp;
-      })
-      .catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html')))
-  );
+  // Ressources statiques : priorité au cache pour un démarrage immédiat sans réseau.
+  event.respondWith((async()=>{
+    const cached=await caches.match(request,{ignoreSearch:true});
+    if(cached){
+      // Mise à jour silencieuse quand Internet revient.
+      event.waitUntil(networkThenCache(request).catch(()=>{}));
+      return cached;
+    }
+    try{
+      return await networkThenCache(request);
+    }catch(_){
+      return new Response('Hors ligne',{status:503,statusText:'Offline'});
+    }
+  })());
+});
+
+self.addEventListener('message',event=>{
+  if(event.data==='SKIP_WAITING') self.skipWaiting();
 });
