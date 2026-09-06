@@ -1,8 +1,12 @@
 {
+  "id": "./",
   "name": "Étiquette Lorraine 40x30",
   "short_name": "Étiquette",
+  "description": "Création d’étiquettes DLC 40x30 avec fonctionnement hors ligne.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f4f4f2",
   "theme_color": "#671b32"
 }
