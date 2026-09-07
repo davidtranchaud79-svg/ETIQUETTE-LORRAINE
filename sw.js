@@ -1,11 +1,10 @@
-const CACHE='etiquette-lorraine-v7-network-status';
+const CACHE='etiquette-lorraine-v8-offline';
 const CORE=[
-  './',
   './index.html',
   './manifest.webmanifest',
   './styles.css',
-  './app.js',
   './pdf40x30.js',
+  './app.js',
   './freeze-module.js',
   './network-status.js'
 ];
@@ -13,7 +12,7 @@ const CORE=[
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
     const cache=await caches.open(CACHE);
-    await cache.addAll(CORE);
+    await Promise.allSettled(CORE.map(url=>cache.add(url)));
     await self.skipWaiting();
   })());
 });
@@ -26,51 +25,14 @@ self.addEventListener('activate',event=>{
   })());
 });
 
-async function cachedText(url){
-  const response=await caches.match(url,{ignoreSearch:true});
-  if(!response) throw new Error('Ressource hors ligne absente : '+url);
-  return response.text();
-}
-
-async function networkThenCache(request){
-  const response=await fetch(request);
-  if(response && response.ok){
-    const cache=await caches.open(CACHE);
-    cache.put(request,response.clone()).catch(()=>{});
-  }
-  return response;
-}
-
-async function combinedApp(request){
-  let appText,freezeText,statusText;
+async function refreshInBackground(request){
   try{
-    const [appResponse,freezeResponse,statusResponse]=await Promise.all([
-      fetch(request,{cache:'no-store'}),
-      fetch(new URL('./freeze-module.js',request.url),{cache:'no-store'}),
-      fetch(new URL('./network-status.js',request.url),{cache:'no-store'})
-    ]);
-    if(!appResponse.ok || !freezeResponse.ok || !statusResponse.ok) throw new Error('Réseau indisponible');
-    appText=await appResponse.text();
-    freezeText=await freezeResponse.text();
-    statusText=await statusResponse.text();
-
-    const cache=await caches.open(CACHE);
-    cache.put('./app.js',new Response(appText,{headers:{'Content-Type':'application/javascript; charset=utf-8'}})).catch(()=>{});
-    cache.put('./freeze-module.js',new Response(freezeText,{headers:{'Content-Type':'application/javascript; charset=utf-8'}})).catch(()=>{});
-    cache.put('./network-status.js',new Response(statusText,{headers:{'Content-Type':'application/javascript; charset=utf-8'}})).catch(()=>{});
-  }catch(_){
-    appText=await cachedText('./app.js');
-    freezeText=await cachedText('./freeze-module.js');
-    statusText=await cachedText('./network-status.js');
-  }
-
-  return new Response(appText+'\n\n'+freezeText+'\n\n'+statusText,{
-    status:200,
-    headers:{
-      'Content-Type':'application/javascript; charset=utf-8',
-      'Cache-Control':'no-store'
+    const response=await fetch(request,{cache:'no-store'});
+    if(response && response.ok){
+      const cache=await caches.open(CACHE);
+      await cache.put(request,response.clone());
     }
-  });
+  }catch(_){ }
 }
 
 self.addEventListener('fetch',event=>{
@@ -80,38 +42,45 @@ self.addEventListener('fetch',event=>{
   const url=new URL(request.url);
   if(url.origin!==self.location.origin) return;
 
-  // app.js inclut automatiquement les modules Congélation et état réseau,
-  // en ligne comme hors ligne.
-  if(url.pathname.endsWith('/app.js')){
-    event.respondWith(combinedApp(request));
-    return;
-  }
-
-  // Navigation : réseau si disponible, sinon copie locale de l'application.
+  // Démarrage de l'application : priorité à la copie locale.
+  // Cela évite qu'iOS reste bloqué lorsqu'il n'y a aucun réseau.
   if(request.mode==='navigate'){
     event.respondWith((async()=>{
+      const cached=await caches.match('./index.html',{ignoreSearch:true});
+      if(cached){
+        event.waitUntil(refreshInBackground(new Request('./index.html')));
+        return cached;
+      }
       try{
-        const response=await networkThenCache(request);
+        const response=await fetch(request);
+        if(response && response.ok){
+          const cache=await caches.open(CACHE);
+          await cache.put('./index.html',response.clone());
+        }
         return response;
       }catch(_){
-        return await caches.match('./index.html') || await caches.match('./');
+        return new Response('<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:-apple-system;padding:24px"><h1>Étiquette Lorraine</h1><p>Le mode hors ligne n’a pas encore été initialisé. Rouvre une fois l’application avec Internet, attends quelques secondes, puis réessaie.</p></body></html>',{headers:{'Content-Type':'text/html; charset=utf-8'}});
       }
     })());
     return;
   }
 
-  // Ressources statiques : priorité au cache pour un démarrage immédiat sans réseau.
+  // Tous les fichiers nécessaires aux étiquettes sont servis depuis le cache.
   event.respondWith((async()=>{
     const cached=await caches.match(request,{ignoreSearch:true});
     if(cached){
-      // Mise à jour silencieuse quand Internet revient.
-      event.waitUntil(networkThenCache(request).catch(()=>{}));
+      event.waitUntil(refreshInBackground(request));
       return cached;
     }
     try{
-      return await networkThenCache(request);
+      const response=await fetch(request);
+      if(response && response.ok){
+        const cache=await caches.open(CACHE);
+        await cache.put(request,response.clone());
+      }
+      return response;
     }catch(_){
-      return new Response('Hors ligne',{status:503,statusText:'Offline'});
+      return new Response('Ressource hors ligne indisponible',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}});
     }
   })());
 });
