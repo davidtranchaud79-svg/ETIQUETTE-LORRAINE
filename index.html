@@ -20,7 +20,7 @@
 
   <main>
     <section class="view active" data-view="print">
-      <div class="status-strip"><span class="dot"></span><strong>PDF temporaire</strong><span>Envoi direct via iPhone</span></div>
+      <div class="status-strip"><span class="dot"></span><strong>Préparation hors ligne</strong><span>Vérification du cache local…</span></div>
 
       <div id="quickWrap" class="quick-wrap hidden">
         <div class="section-mini"><strong>Accès rapide</strong><span>Favoris + récents</span></div>
@@ -100,6 +100,7 @@
       <div class="section-heading top"><div><h2>Utilisation avec Print Master</h2><p>Le chemin le plus court sur iPhone.</p></div></div>
       <div class="card steps-card"><ol><li>Prépare ton étiquette.</li><li>Touche <strong>Envoyer vers Print Master</strong>.</li><li>Dans la feuille de partage iOS, choisis <strong>Enregistrer dans…</strong>.</li><li>Sélectionne <strong>Print Master</strong> comme destination.</li><li>Dans Print Master, ouvre <strong>Impression PDF</strong>, vérifie <strong>40 × 30 mm</strong> et imprime.</li></ol></div>
       <div class="card warning-card"><h3>Pas d’encombrement inutile</h3><p>L’envoi principal utilise un PDF temporaire pour la feuille de partage. Le bouton « Enregistrer une copie PDF » est réservé aux cas où tu veux réellement conserver le fichier.</p></div>
+      <div class="card warning-card"><h3>Mode hors ligne</h3><p>Après une ouverture avec Internet, l’application, la base produits, le calcul des dates et le générateur PDF restent disponibles localement. Le bandeau en haut indique si tu es en ligne ou hors ligne.</p></div>
       <div class="card warning-card"><h3>PMS / HACCP</h3><p>Les durées sont volontairement sous ton contrôle. L’application calcule une échéance à partir des règles que tu as saisies ; elle ne détermine pas elle-même la durée sanitaire d’un produit.</p></div>
     </section>
   </main>
@@ -149,5 +150,7 @@
 <div id="toast" class="toast"></div>
 <script src="pdf40x30.js"></script>
 <script src="app.js"></script>
+<script src="freeze-module.js"></script>
+<script src="network-status.js"></script>
 </body>
 </html>
