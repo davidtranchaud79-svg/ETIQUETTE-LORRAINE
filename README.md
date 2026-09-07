@@ -2,6 +2,12 @@
 
 Application mobile/PWA pour créer des étiquettes de traçabilité en cuisine, générer des PDF aux dimensions exactes et les ouvrir dans **Print Master**.
 
+## Compatibilité
+- **iPhone / iPad** via Safari et installation sur l’écran d’accueil.
+- **Android** via Chrome et installation PWA.
+- Même logique hors ligne sur les deux plateformes.
+- Synchronisation optionnelle entre iPhone et Android via Google Sheet + Apps Script.
+
 ## Modes d’étiquette
 - Production
 - Ouverture
@@ -39,17 +45,25 @@ Dans **Réglages > Diagnostic hors ligne**, l’application contrôle :
 ## Mises à jour
 Une nouvelle version peut être téléchargée en arrière-plan. L’application affiche **Nouvelle version disponible** puis permet de l’appliquer sans effacer la base produits.
 
-## Synchronisation multi-iPhone (optionnelle)
-Le dépôt contient `apps-script-sync.gs` et `SYNC_APPS_SCRIPT.md` pour connecter plusieurs iPhone à un Google Sheet via Apps Script. La synchronisation se fait lorsque le réseau revient ; le fonctionnement local ne dépend pas de Google.
+## Synchronisation iPhone + Android (optionnelle)
+Le dépôt contient `apps-script-sync.gs` et `SYNC_APPS_SCRIPT.md` pour connecter plusieurs appareils à un Google Sheet via Apps Script. Chaque appareil reste autonome hors ligne et synchronise ses changements lorsque le réseau revient.
 
-La synchronisation fusionne les produits par identifiant et date de modification, propage les suppressions et peut partager le format d’étiquette et la durée de congélation.
+La synchronisation fusionne les produits par identifiant et date de modification, propage les suppressions et peut partager le format d’étiquette ainsi que la durée de congélation.
+
+## Installation Android
+1. Ouvrir Étiquette Lorraine dans **Chrome**.
+2. Utiliser **Installer l’application** ou **Ajouter à l’écran d’accueil**.
+3. Ouvrir l’application une première fois avec Internet.
+4. Lancer **Réglages > Diagnostic hors ligne**.
+5. Une fois le cache prêt, l’application peut fonctionner sans réseau.
 
 ## Impression Print Master
 1. Préparer l’étiquette.
 2. Toucher **Envoyer vers Print Master**.
-3. Sur iPhone, utiliser **Enregistrer dans…** puis la destination Print Master lorsque nécessaire.
-4. Dans Print Master, ouvrir **Impression PDF**.
-5. Choisir le même format physique que celui défini dans Étiquette Lorraine et imprimer à l’échelle adaptée.
+3. Sur Android, choisir **Print Master** directement dans le partage si l’application apparaît ; sinon enregistrer le PDF puis l’ouvrir dans Print Master.
+4. Sur iPhone, utiliser **Enregistrer dans…** puis la destination Print Master lorsque nécessaire.
+5. Dans Print Master, ouvrir **Impression PDF**.
+6. Choisir le même format physique que celui défini dans Étiquette Lorraine et imprimer à l’échelle adaptée.
 
 ## Important PMS / HACCP
 Les durées de conservation doivent être validées par le PMS/HACCP de l’établissement. L’application applique les règles configurées ; elle ne définit pas elle-même une durée sanitaire universelle.
