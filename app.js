@@ -5,6 +5,7 @@
     await load('./print-v4.js');
     await load('./data-v4.js');
     await load('./settings-v4.js');
+    await load('./platform-v4.js');
     await init();
   }catch(e){
     console.error(e);
