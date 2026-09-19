@@ -127,20 +127,18 @@
     return c;
   }
 
-  // La CT321D interprète le bitmap reçu avec la polarité inverse du canvas :
-  // 0 = point noir, 1 = blanc. On initialise donc à blanc (0xFF) et on efface
-  // uniquement les bits correspondant aux pixels noirs. Cela évite le fond noir.
+  // CT321D / TSPL BITMAP : bit 0 = papier blanc, bit 1 = point noir.
+  // Le buffer part donc à 0 et seuls les pixels noirs activent un bit.
   function canvasMonoBytes(canvas){
     const ctx=canvas.getContext('2d',{willReadFrequently:true});
     const img=ctx.getImageData(0,0,canvas.width,canvas.height).data;
     const widthBytes=Math.ceil(canvas.width/8),out=new Uint8Array(widthBytes*canvas.height);
-    out.fill(0xFF);
     for(let y=0;y<canvas.height;y++){
       for(let x=0;x<canvas.width;x++){
         const i=(y*canvas.width+x)*4;
         const lum=0.299*img[i]+0.587*img[i+1]+0.114*img[i+2];
         if(img[i+3]>20&&lum<150){
-          out[y*widthBytes+(x>>3)]&=~(0x80>>(x&7));
+          out[y*widthBytes+(x>>3)]|=(0x80>>(x&7));
         }
       }
     }
