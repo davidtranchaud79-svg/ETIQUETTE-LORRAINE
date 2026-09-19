@@ -1,4 +1,4 @@
-# Étiquette Lorraine — V4 Offline-first
+# Étiquette Lorraine — V5 Offline-first + impression directe CLABEL
 
 Application mobile/PWA pour créer des étiquettes de traçabilité en cuisine, générer des PDF aux dimensions exactes et les ouvrir dans **CLABEL / Clabel**, **Clabel trade**, **Print Master** ou une autre application compatible PDF.
 
@@ -57,7 +57,19 @@ La synchronisation fusionne les produits par identifiant et date de modification
 4. Lancer **Réglages > Diagnostic hors ligne**.
 5. Une fois le cache prêt, l’application peut fonctionner sans réseau.
 
-## Impression CLABEL
+## Impression directe CLABEL — V5
+
+La V5 ajoute une couche native optionnelle basée sur Capacitor. Le fonctionnement visé est : **Produit → Imprimer directement en Bluetooth → étiquette**.
+
+- **Android natif** : connexion Bluetooth classique RFCOMM/SPP aux imprimantes CLABEL déjà jumelées.
+- **iPhone/iPad natif** : tentative de connexion BLE GATT via CoreBluetooth quand le modèle expose une caractéristique d'écriture compatible.
+- Génération locale d'un bitmap noir/blanc à **203 dpi** puis envoi dans une commande **TSPL BITMAP**.
+- Le PDF reste toujours disponible comme solution de secours.
+- Le module PWA classique n'essaie pas de contourner les restrictions Bluetooth du navigateur.
+
+Le dossier **native/** contient le projet Capacitor 8.5.2 et les bridges Android/iOS. Voir **NATIVE_DIRECT_PRINT.md** pour la construction et le premier test.
+
+## Impression CLABEL par PDF
 
 Un profil imprimante est disponible dans **Réglages > Imprimante / application** :
 - **CLABEL** (application Clabel) ;
