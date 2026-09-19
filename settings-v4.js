@@ -13,7 +13,40 @@ function toggleServiceLock(){if(!state.settings.serviceLocked&&!localStorage.get
 function renderBackupStatus(){if(!$('#lastBackupText'))return;$('#lastBackupText').textContent=state.settings.lastBackup?`Sauvegarde interne : ${new Date(state.settings.lastBackup).toLocaleString('fr-FR')}`:'Sauvegarde interne : —'}
 function renderAudit(){const box=$('#auditList');if(!box)return;if(!state.audit.length){box.className='audit-list empty-state';box.innerHTML='<p>Aucune modification enregistrée.</p>';return}box.className='audit-list';box.innerHTML=state.audit.slice(0,50).map(a=>`<div class="audit-row"><strong>${esc(a.action)} · ${esc(a.entity||'')}</strong><small>${new Date(a.createdAt).toLocaleString('fr-FR')} · ${esc(a.actor||'—')}</small></div>`).join('')}
 function updateConnection(){const strip=$('#networkStrip');if(!strip)return;strip.classList.remove('online','offline','preparing');if(navigator.onLine){strip.classList.add('online');strip.querySelector('strong').textContent='En ligne';strip.querySelector('span:last-child').textContent='Application locale prête · synchronisation possible'}else{strip.classList.add('offline');strip.querySelector('strong').textContent='Mode hors ligne';strip.querySelector('span:last-child').textContent='Produits, calculs et PDF disponibles localement'}}
-async function registerServiceWorker(){if(!('serviceWorker'in navigator)){updateConnection();return}try{const reg=await navigator.serviceWorker.register('./sw.js');state.registration=reg;if(reg.waiting)showUpdateBanner();reg.addEventListener('updatefound',()=>{const worker=reg.installing;if(!worker)return;worker.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller)showUpdateBanner()})});navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload());await navigator.serviceWorker.ready;updateConnection()}catch(e){console.error(e);toast('Mode hors ligne incomplet')}}
+async function registerServiceWorker(){
+  // Dans l'application Capacitor, les ressources sont déjà embarquées localement.
+  // Un service worker persistant peut conserver un ancien moteur d'impression après
+  // une mise à jour Xcode. On le désactive donc uniquement en mode natif.
+  const nativeCapacitor=!!(window.Capacitor?.isNativePlatform?.());
+  if(nativeCapacitor){
+    try{
+      if('serviceWorker' in navigator){
+        const regs=await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(reg=>reg.unregister()));
+      }
+      if('caches' in window){
+        const keys=await caches.keys();
+        await Promise.all(keys.filter(k=>k.startsWith('etiquette-lorraine-')).map(k=>caches.delete(k)));
+      }
+    }catch(e){console.warn('Nettoyage cache natif incomplet',e)}
+    state.registration=null;
+    updateConnection();
+    return;
+  }
+  if(!('serviceWorker'in navigator)){updateConnection();return}
+  try{
+    const reg=await navigator.serviceWorker.register('./sw.js');
+    state.registration=reg;
+    if(reg.waiting)showUpdateBanner();
+    reg.addEventListener('updatefound',()=>{
+      const worker=reg.installing;if(!worker)return;
+      worker.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller)showUpdateBanner()})
+    });
+    navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload());
+    await navigator.serviceWorker.ready;
+    updateConnection();
+  }catch(e){console.error(e);toast('Mode hors ligne incomplet')}
+}
 function showUpdateBanner(){$('#updateBanner').classList.remove('hidden');$('#updateStatus').textContent='Nouvelle version prête à installer'}
 function applyWaitingUpdate(){const w=state.registration?.waiting;if(w)w.postMessage({type:'SKIP_WAITING'});else toast('Aucune mise à jour en attente')}
 async function checkForUpdate(){if(!state.registration)return toast('Service hors ligne non disponible');$('#updateStatus').textContent='Vérification…';try{await state.registration.update();if(state.registration.waiting)showUpdateBanner();else{$('#updateStatus').textContent=`Version ${APP_VERSION} · à jour`;toast('Application à jour')}}catch(e){$('#updateStatus').textContent='Vérification impossible hors ligne';toast('Vérification impossible sans Internet')}}
