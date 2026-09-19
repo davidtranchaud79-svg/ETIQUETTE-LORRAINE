@@ -28,24 +28,44 @@ Permissions Android à conserver dans AndroidManifest.xml :
 - android.permission.BLUETOOTH_SCAN
 - android.permission.ACCESS_FINE_LOCATION avec maxSdkVersion 30 pour les anciens Android si la découverte l'exige.
 
-## iPhone / iPad
+## iPhone / iPad — priorité V5.1
 
-La partie iOS utilise CoreBluetooth BLE. Elle fonctionne seulement si le modèle CLABEL expose une interface BLE GATT accessible. Si la CT concernée n'expose que Bluetooth classique SPP, iOS ne permet pas à une application ordinaire d'utiliser SPP comme Android. Dans ce cas, le PDF/Clabel reste la solution de secours tant que le protocole iOS exact du modèle n'est pas identifié.
+La version iOS est maintenant prioritaire.
 
-Ajouter dans Info.plist :
-- NSBluetoothAlwaysUsageDescription : Étiquette Lorraine utilise le Bluetooth pour imprimer directement les étiquettes.
+Le module iPhone :
+1. scanne les périphériques Bluetooth visibles pendant 4 secondes ;
+2. affiche les périphériques CLABEL probables en premier ;
+3. se connecte à l'imprimante choisie ;
+4. inspecte automatiquement ses services et caractéristiques GATT ;
+5. sélectionne une caractéristique d'écriture, avec priorité aux UUID d'impression courants ;
+6. permet un **Test 60 x 30** avant l'utilisation réelle ;
+7. propose un bouton **Diagnostic** qui affiche les UUID découverts afin d'adapter précisément le protocole au modèle réel si nécessaire ;
+8. conserve le PDF comme secours.
+
+Ajouter dans Info.plist les clés fournies dans `native/plugin/ios/Info.plist.additions.xml`.
+
+Premier test iPhone :
+1. Allumer la CLABEL et la placer près de l'iPhone.
+2. Ouvrir la version native d'Étiquette Lorraine.
+3. Autoriser Bluetooth lors de la première demande.
+4. Réglages > Impression directe Bluetooth > **Rechercher**.
+5. Choisir la CLABEL détectée puis **Connecter**.
+6. Appuyer sur **Test 60 × 30**.
+7. Si rien ne sort, appuyer sur **Diagnostic** et conserver le résultat : il indique le service et la caractéristique Bluetooth réellement exposés par l'imprimante.
 
 ## Préparer le projet natif sur Mac
 
 Depuis le dossier native :
 1. npm install
 2. npm run prepare
-3. npx cap add android
-4. npx cap add ios
-5. Copier ClabelPrinterPlugin.kt dans le package Android de l'application et utiliser le MainActivity fourni.
-6. Copier ClabelPrinterPlugin.swift dans la cible iOS.
-7. npm run sync
-8. Ouvrir Android Studio avec npm run android:open ou Xcode avec npm run ios:open.
+3. npx cap add ios
+4. Copier `native/plugin/ios/ClabelPrinterPlugin.swift` dans la cible iOS App.
+5. Ajouter les clés de `native/plugin/ios/Info.plist.additions.xml` dans `ios/App/App/Info.plist`.
+6. npm run sync
+7. npm run ios:open
+8. Dans Xcode, sélectionner l'iPhone réel comme destination, signer avec son compte Apple, puis lancer l'application.
+
+Android reste disponible ensuite avec `npx cap add android` si nécessaire.
 
 Le projet utilise Capacitor 8.5.2.
 
