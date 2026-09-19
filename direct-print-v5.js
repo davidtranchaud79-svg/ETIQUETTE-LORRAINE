@@ -26,65 +26,122 @@
     return lines.slice(0,maxLines);
   }
 
+  // Rendu thermique CLABEL : fond papier blanc, encre noire uniquement.
+  // Modèle validé : produit / dates / lot-température-initiales, sans logo ni pictogramme.
   function drawLabel(label,fmt){
     const width=mmDots(fmt.widthMm),height=mmDots(fmt.heightMm);
     const c=document.createElement('canvas');c.width=width;c.height=height;
     const ctx=c.getContext('2d',{willReadFrequently:true});
     ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
-    ctx.fillStyle='#000';ctx.strokeStyle='#000';ctx.lineWidth=2;
-    const m=clamp(Math.round(width*0.035),8,18);
+    ctx.fillStyle='#000';ctx.strokeStyle='#000';
+    ctx.lineCap='butt';
+
+    const m=clamp(Math.round(width*0.025),7,14);
+    const border=clamp(Math.round(height*0.009),1,2);
+    ctx.lineWidth=border;
     ctx.strokeRect(2,2,width-4,height-4);
 
+    // Titre produit : priorité maximale à la lisibilité, 1 à 2 lignes.
     const product=String(label.product||'PRODUIT').toUpperCase();
-    let productSize=clamp(Math.round(height*0.16),22,42);
-    ctx.font='900 '+productSize+'px Arial, sans-serif';
-    let lines=wrapCanvas(ctx,product,width-2*m,2);
-    while(productSize>18 && lines.some(function(x){return ctx.measureText(x).width>width-2*m})){
-      productSize-=1;ctx.font='900 '+productSize+'px Arial, sans-serif';lines=wrapCanvas(ctx,product,width-2*m,2);
+    const titleMaxWidth=width-2*m;
+    let productSize=clamp(Math.round(height*0.19),24,44);
+    let lines=[];
+    while(productSize>=18){
+      ctx.font='900 '+productSize+'px Arial, sans-serif';
+      lines=wrapCanvas(ctx,product,titleMaxWidth,2);
+      if(lines.length<=2 && lines.every(function(x){return ctx.measureText(x).width<=titleMaxWidth}))break;
+      productSize--;
     }
     let y=m+productSize;
-    lines.forEach(function(line){ctx.fillText(line,m,y);y+=productSize+2});
+    lines.forEach(function(line){ctx.fillText(line,m,y);y+=productSize+1});
 
-    const mode=String(label.type||'PRODUCTION').toUpperCase();
-    const modeSize=clamp(Math.round(height*0.065),10,18);
-    ctx.font='700 '+modeSize+'px Arial, sans-serif';
-    y+=2;ctx.fillText(mode,m,y);
-    const dividerY=Math.min(height-Math.round(height*0.42),y+8);
-    ctx.beginPath();ctx.moveTo(m,dividerY);ctx.lineTo(width-m,dividerY);ctx.stroke();
+    // Séparation sous le produit.
+    const titleDivider=Math.min(Math.round(height*0.40),y+4);
+    ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(m,titleDivider);ctx.lineTo(width-m,titleDivider);ctx.stroke();
 
-    const col2=Math.round(width*0.53),labelSize=clamp(Math.round(height*0.055),9,15),dateSize=clamp(Math.round(height*0.11),17,28);
+    // Bloc dates en deux colonnes.
+    const dateTop=titleDivider+clamp(Math.round(height*0.045),7,11);
+    const col2=Math.round(width*0.53);
+    const labelSize=clamp(Math.round(height*0.062),10,15);
+    const dateSize=clamp(Math.round(height*0.125),19,30);
+    const leftLabel=ascii(label.dateLabel||'PRODUIT LE');
+    const rightLabel=ascii(label.expiryLabel||'DLC');
+
     ctx.font='700 '+labelSize+'px Arial, sans-serif';
-    ctx.fillText(ascii(label.dateLabel||'DATE'),m,dividerY+labelSize+8);
-    ctx.fillText(ascii(label.expiryLabel||'DLC'),col2,dividerY+labelSize+8);
-    ctx.font='900 '+dateSize+'px Arial, sans-serif';
-    ctx.fillText(ascii(label.date||'--/--/----'),m,dividerY+labelSize+dateSize+12);
-    const expiry=label.detail||label.dlc||'--/--/----';
-    let eSize=dateSize;ctx.font='900 '+eSize+'px Arial, sans-serif';
-    while(eSize>11&&ctx.measureText(ascii(expiry)).width>width-col2-m){eSize--;ctx.font='900 '+eSize+'px Arial, sans-serif'}
-    ctx.fillText(ascii(expiry),col2,dividerY+labelSize+dateSize+12);
+    ctx.fillText(leftLabel,m,dateTop+labelSize);
+    ctx.fillText(rightLabel,col2,dateTop+labelSize);
 
-    const bottomY=height-m-10;
-    ctx.font='500 '+clamp(Math.round(height*0.05),9,14)+'px Arial, sans-serif';
-    ctx.fillText(ascii(label.lot?'Lot : '+label.lot:'Lot : -'),m,bottomY);
-    const initials=ascii(String(label.initials||'-').toUpperCase());
-    ctx.font='900 '+clamp(Math.round(height*0.06),10,16)+'px Arial, sans-serif';
-    const iw=ctx.measureText(initials).width;ctx.fillText(initials,width-m-iw,bottomY);
-    if(label.storage){
-      ctx.font='500 '+clamp(Math.round(height*0.042),8,12)+'px Arial, sans-serif';
-      ctx.fillText(ascii(label.storage),m,height-m+2);
+    const dateBaseline=dateTop+labelSize+dateSize+3;
+    ctx.font='900 '+dateSize+'px Arial, sans-serif';
+    let dSize=dateSize;
+    const dateText=ascii(label.date||'--/--/----');
+    while(dSize>13&&ctx.measureText(dateText).width>col2-m*2){
+      dSize--;ctx.font='900 '+dSize+'px Arial, sans-serif';
     }
+    ctx.fillText(dateText,m,dateBaseline);
+
+    const expiry=ascii(label.detail||label.dlc||'--/--/----');
+    let eSize=dateSize;ctx.font='900 '+eSize+'px Arial, sans-serif';
+    while(eSize>13&&ctx.measureText(expiry).width>width-col2-m){
+      eSize--;ctx.font='900 '+eSize+'px Arial, sans-serif';
+    }
+    ctx.fillText(expiry,col2,dateBaseline);
+
+    // Séparateur vertical des dates.
+    const datesBottom=Math.min(Math.round(height*0.75),dateBaseline+5);
+    ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(col2-8,dateTop);ctx.lineTo(col2-8,datesBottom);ctx.stroke();
+
+    // Pied : LOT | température/conservation | initiales.
+    const footerTop=Math.min(height-m-30,datesBottom+5);
+    ctx.beginPath();ctx.moveTo(m,footerTop);ctx.lineTo(width-m,footerTop);ctx.stroke();
+
+    const footerY=height-m-5;
+    const sep1=Math.round(width*0.34),sep2=Math.round(width*0.70);
+    ctx.beginPath();ctx.moveTo(sep1,footerTop+4);ctx.lineTo(sep1,footerY+2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(sep2,footerTop+4);ctx.lineTo(sep2,footerY+2);ctx.stroke();
+
+    const small=clamp(Math.round(height*0.052),9,13);
+    const strong=clamp(Math.round(height*0.072),12,17);
+    const lot=ascii(label.lot||'-');
+    ctx.font='700 '+small+'px Arial, sans-serif';
+    ctx.fillText('LOT :',m,footerTop+small+4);
+    ctx.font='900 '+strong+'px Arial, sans-serif';
+    ctx.fillText(lot,m,Math.min(footerY,footerTop+small+strong+6));
+
+    const storage=ascii(String(label.storage||'-'));
+    let sSize=strong;ctx.font='900 '+sSize+'px Arial, sans-serif';
+    const storageMax=sep2-sep1-12;
+    while(sSize>9&&ctx.measureText(storage).width>storageMax){
+      sSize--;ctx.font='900 '+sSize+'px Arial, sans-serif';
+    }
+    const sw=ctx.measureText(storage).width;
+    ctx.fillText(storage,sep1+(storageMax-sw)/2+6,footerY);
+
+    const initials=ascii(String(label.initials||'-').toUpperCase());
+    ctx.font='900 '+strong+'px Arial, sans-serif';
+    const iw=ctx.measureText(initials).width;
+    ctx.fillText(initials,sep2+(width-m-sep2-iw)/2,footerY);
+
     return c;
   }
 
+  // La CT321D interprète le bitmap reçu avec la polarité inverse du canvas :
+  // 0 = point noir, 1 = blanc. On initialise donc à blanc (0xFF) et on efface
+  // uniquement les bits correspondant aux pixels noirs. Cela évite le fond noir.
   function canvasMonoBytes(canvas){
     const ctx=canvas.getContext('2d',{willReadFrequently:true});
     const img=ctx.getImageData(0,0,canvas.width,canvas.height).data;
     const widthBytes=Math.ceil(canvas.width/8),out=new Uint8Array(widthBytes*canvas.height);
+    out.fill(0xFF);
     for(let y=0;y<canvas.height;y++){
       for(let x=0;x<canvas.width;x++){
         const i=(y*canvas.width+x)*4;
         const lum=0.299*img[i]+0.587*img[i+1]+0.114*img[i+2];
-        if(img[i+3]>20&&lum<150)out[y*widthBytes+(x>>3)]|=(0x80>>(x&7));
+        if(img[i+3]>20&&lum<150){
+          out[y*widthBytes+(x>>3)]&=~(0x80>>(x&7));
+        }
       }
     }
     return {bytes:out,widthBytes:widthBytes,height:canvas.height};
