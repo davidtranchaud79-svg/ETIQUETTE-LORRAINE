@@ -1,0 +1,5 @@
+<!-- À ajouter dans ios/App/App/Info.plist après npx cap add ios -->
+<key>NSBluetoothAlwaysUsageDescription</key>
+<string>Étiquette Lorraine utilise le Bluetooth pour imprimer directement les étiquettes sur l’imprimante CLABEL.</string>
+<key>NSBluetoothPeripheralUsageDescription</key>
+<string>Étiquette Lorraine utilise le Bluetooth pour imprimer directement les étiquettes sur l’imprimante CLABEL.</string>
