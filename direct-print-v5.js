@@ -159,12 +159,19 @@
   }
   function tsplJob(labels,fmt){
     const jobs=[];
-    labels.forEach(function(label){
+    // Regroupe les copies identiques consecutives. Le CT321D peut ignorer
+    // les jobs TSPL concaténés trop rapidement ; PRINT 1,N demande N copies
+    // directement au firmware de l'imprimante.
+    for(let i=0;i<labels.length;){
+      const label=labels[i],key=JSON.stringify(label);
+      let copies=1;
+      while(i+copies<labels.length && JSON.stringify(labels[i+copies])===key)copies++;
       const canvas=drawLabel(label,fmt),mono=canvasMonoBytes(canvas);
       const head=utf8Bytes('SIZE '+fmt.widthMm+' mm,'+fmt.heightMm+' mm\r\nGAP 2 mm,0 mm\r\nDENSITY 8\r\nDIRECTION 1\r\nCLS\r\nBITMAP 0,0,'+mono.widthBytes+','+mono.height+',0,');
-      const tail=utf8Bytes('\r\nPRINT 1,1\r\n');
+      const tail=utf8Bytes('\r\nPRINT 1,'+copies+'\r\n');
       jobs.push(concatBytes([head,mono.bytes,tail]));
-    });
+      i+=copies;
+    }
     return concatBytes(jobs);
   }
 
