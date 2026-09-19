@@ -1,4 +1,4 @@
-const CACHE='etiquette-lorraine-v14-direct-print';
+const CACHE='etiquette-lorraine-v15-iphone-direct';
 const CORE=['./index.html','./manifest.webmanifest','./styles.css','./pdf40x30.js','./app.js','./core-v4.js','./print-v4.js','./data-v4.js','./settings-v4.js','./platform-v4.js','./printer-v4.js','./direct-print-v5.js'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
