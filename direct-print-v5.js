@@ -7,6 +7,7 @@
 
   function nativePlugin(){return window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.ClabelPrinter||null}
   function nativeAvailable(){try{return !!nativePlugin() && !!(window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())}catch(_){return false}}
+  function nativePlatform(){try{return window.Capacitor&&window.Capacitor.getPlatform?window.Capacitor.getPlatform():'web'}catch(_){return'web'}}
   function mmDots(mm){return Math.max(1,Math.round(Number(mm)*DOTS_PER_MM))}
   function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
   function ascii(s){return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
@@ -132,10 +133,11 @@
     const printerCard=document.getElementById('printerProfileCard');if(!printerCard)return;
     const card=document.createElement('div');card.id='nativePrintCard';card.className='card settings-card';
     if(nativeAvailable()){
-      card.innerHTML='<div class="card-title-row"><div><h3>Impression directe Bluetooth</h3><p>Connexion native CLABEL / TSPL, sans passer par l’application Clabel.</p></div><span id="nativePrintBadge" class="platform-badge">Natif</span></div>'+
+      const platform=nativePlatform(),platformLabel=platform==='ios'?'iPhone / iPad':platform==='android'?'Android':'Natif';
+      card.innerHTML='<div class="card-title-row"><div><h3>Impression directe Bluetooth</h3><p>'+platformLabel+' · connexion CLABEL directe, sans passer par l’application Clabel.</p></div><span id="nativePrintBadge" class="platform-badge">'+platformLabel+'</span></div>'+
         '<label class="field-label" for="nativePrinterSelect">Imprimante</label><select id="nativePrinterSelect" class="input"><option value="">Rechercher une imprimante…</option></select>'+
-        '<div class="button-row" style="margin-top:10px"><button id="scanNativePrinters" class="secondary-btn">Rechercher</button><button id="connectNativePrinter" class="primary-btn">Connecter</button><button id="disconnectNativePrinter" class="secondary-btn">Déconnecter</button></div>'+
-        '<small id="nativePrintStatus" class="muted-line">Aucune imprimante connectée.</small>';
+        '<div class="button-row" style="margin-top:10px"><button id="scanNativePrinters" class="secondary-btn">Rechercher</button><button id="connectNativePrinter" class="primary-btn">Connecter</button><button id="testNativePrinter" class="secondary-btn">Test 60 × 30</button><button id="diagNativePrinter" class="secondary-btn">Diagnostic</button><button id="disconnectNativePrinter" class="secondary-btn">Déconnecter</button></div>'+
+        '<small id="nativePrintStatus" class="muted-line">Aucune imprimante connectée.</small><pre id="nativePrintDiag" style="display:none;white-space:pre-wrap;word-break:break-word;margin-top:10px;font-size:10px;line-height:1.35;max-height:180px;overflow:auto"></pre>';
     }else{
       card.innerHTML='<h3>Impression directe Bluetooth</h3><p>Le module direct est prêt, mais le navigateur/PWA ne peut pas utiliser le Bluetooth classique de la CLABEL.</p>'+
         '<div class="printer-note">Pour obtenir <strong>Étiquette Lorraine → Imprimer → étiquette qui sort</strong>, il faut la version native Android/iOS. Le PDF reste disponible comme secours.</div>';
@@ -144,6 +146,8 @@
     if(nativeAvailable()){
       card.querySelector('#scanNativePrinters').addEventListener('click',scanUI);
       card.querySelector('#connectNativePrinter').addEventListener('click',connectUI);
+      card.querySelector('#testNativePrinter').addEventListener('click',testUI);
+      card.querySelector('#diagNativePrinter').addEventListener('click',diagnosticsUI);
       card.querySelector('#disconnectNativePrinter').addEventListener('click',disconnectUI);
       restoreNativeSelection();
       addDirectPrintButton();
@@ -174,7 +178,8 @@
     const status=document.getElementById('nativePrintStatus');if(status)status.textContent='Recherche…';
     try{
       const devices=await listPrinters();populateDevices(document.getElementById('nativePrinterSelect'),devices,localStorage.getItem('el.nativePrinterAddress')||'');
-      if(status)status.textContent=devices.length?devices.length+' imprimante(s) trouvée(s).':'Aucune CLABEL trouvée. Sur Android, jumelle-la d’abord dans les réglages Bluetooth.';
+      const p=nativePlatform();
+      if(status)status.textContent=devices.length?devices.length+' appareil(s) Bluetooth trouvé(s).':(p==='ios'?'Aucun appareil détecté. Vérifie que la CLABEL est allumée et proche de l’iPhone.':'Aucune CLABEL trouvée. Sur Android, jumelle-la d’abord dans les réglages Bluetooth.');
     }catch(e){if(status)status.textContent='Recherche impossible : '+e.message}
   }
   async function connectUI(){
@@ -187,6 +192,36 @@
       const btn=document.getElementById('directNativePrintBtn');if(btn)btn.disabled=false;toast('Imprimante CLABEL connectée');
     }catch(e){if(status)status.textContent='Connexion impossible : '+e.message;toast('Connexion imprimante impossible')}
   }
+  async function testUI(){
+    const status=document.getElementById('nativePrintStatus');
+    try{
+      if(status)status.textContent='Test 60 × 30 en cours…';
+      const sample={product:'TEST CLABEL',type:'PRODUCTION',date:'19/09/2026',dlc:'20/09/2026',detail:'',lot:'TEST',initials:'DT',storage:'+0/+3 °C',dateLabel:'PROD. LE',expiryLabel:'DLC'};
+      const fmt={widthMm:60,heightMm:30},job=tsplJob([sample],fmt);
+      const result=await pluginCall('write',{base64:bytesToBase64(job),protocol:'tspl',widthMm:60,heightMm:30});
+      if(status)status.textContent='Test envoyé à l’imprimante.';
+      toast('Test 60 × 30 envoyé');
+      return result;
+    }catch(e){
+      if(status)status.textContent='Test impossible : '+e.message;
+      toast('Test Bluetooth impossible');
+    }
+  }
+
+  async function diagnosticsUI(){
+    const box=document.getElementById('nativePrintDiag'),status=document.getElementById('nativePrintStatus');
+    try{
+      const d=await pluginCall('diagnostics',{});
+      const text=JSON.stringify(d,null,2);
+      if(box){box.style.display='block';box.textContent=text}
+      if(status)status.textContent=d&&d.connected?'Diagnostic Bluetooth prêt.':'Diagnostic : aucune imprimante connectée.';
+      try{await navigator.clipboard?.writeText?.(text)}catch(_){}
+      toast('Diagnostic Bluetooth affiché');
+    }catch(e){
+      if(status)status.textContent='Diagnostic impossible : '+e.message;
+    }
+  }
+
   async function disconnectUI(){
     await disconnectPrinter();const status=document.getElementById('nativePrintStatus');if(status)status.textContent='Imprimante déconnectée.';
     const btn=document.getElementById('directNativePrintBtn');if(btn)btn.disabled=true;
@@ -202,5 +237,5 @@
   }
 
   window.initDirectPrint=async function(){installUI()};
-  window.ELDirectPrint={nativeAvailable:nativeAvailable,listPrinters:listPrinters,connectPrinter:connectPrinter,disconnectPrinter:disconnectPrinter,printLabelsDirect:printLabelsDirect,tsplJob:tsplJob};
+  window.ELDirectPrint={nativeAvailable:nativeAvailable,nativePlatform:nativePlatform,listPrinters:listPrinters,connectPrinter:connectPrinter,disconnectPrinter:disconnectPrinter,printLabelsDirect:printLabelsDirect,tsplJob:tsplJob,diagnostics:function(){return pluginCall('diagnostics',{})}};
 })();
