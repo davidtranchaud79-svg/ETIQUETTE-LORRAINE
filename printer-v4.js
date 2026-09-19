@@ -1,9 +1,9 @@
 // Profil imprimante pour Étiquette Lorraine V4 — CLABEL / PDF
 (function(){
   const PROFILES={
-    clabel:{label:'CLABEL',app:'Clabel',models:'CT327D et modèles récents',button:'Envoyer vers Clabel'},
-    clabel321d:{label:'CLABEL CT321D',app:'Clabel trade',models:'CT321D',button:'Envoyer vers Clabel trade'},
-    clabel327d:{label:'CLABEL CT327D',app:'Clabel',models:'CT327D',button:'Envoyer vers Clabel'},
+    clabel:{label:'CLABEL',app:'Clabel',models:'CT327D et modèles récents',button:'Créer le PDF pour Clabel'},
+    clabel321d:{label:'CLABEL CT321D',app:'Clabel trade',models:'CT321D',button:'Créer le PDF pour Clabel trade'},
+    clabel327d:{label:'CLABEL CT327D',app:'Clabel',models:'CT327D',button:'Créer le PDF pour Clabel'},
     printmaster:{label:'Phomemo / Print Master',app:'Print Master',models:'Phomemo',button:'Envoyer vers Print Master'},
     generic:{label:'PDF / autre imprimante',app:'application d’impression',models:'Imprimante PDF compatible',button:'Partager le PDF'}
   };
@@ -96,6 +96,41 @@
     if(typeof saveFormatSettings==='function')await saveFormatSettings();
   }
 
+  function ensureClabelGuide(){
+    if(document.getElementById('clabelGuideDialog'))return;
+    const d=document.createElement('dialog');
+    d.id='clabelGuideDialog';
+    d.className='modal small-modal';
+    d.innerHTML=`
+      <div class="modal-card">
+        <div class="modal-head"><h2>PDF prêt pour CLABEL</h2><button type="button" id="closeClabelGuide" class="close-btn" aria-label="Fermer">×</button></div>
+        <p class="modal-copy" id="clabelGuideText"></p>
+        <ol class="clabel-guide-list" style="padding-left:20px;line-height:1.5;font-size:13px">
+          <li>Dans la feuille de partage, choisis <strong>Enregistrer dans Fichiers</strong> si CLABEL n’apparaît pas.</li>
+          <li>Ouvre <strong id="clabelGuideApp">Clabel</strong>.</li>
+          <li>Va dans <strong>PDF Printing / Impression PDF</strong>.</li>
+          <li>Importe le PDF que tu viens d’enregistrer.</li>
+          <li>Vérifie le format <strong id="clabelGuideFormat">60 × 30 mm</strong> puis imprime à 100 %.</li>
+        </ol>
+        <div class="modal-actions"><button type="button" id="okClabelGuide" class="primary-btn">Compris</button></div>
+      </div>`;
+    document.body.appendChild(d);
+    const close=()=>{document.activeElement?.blur();requestAnimationFrame(()=>d.open&&d.close())};
+    d.querySelector('#closeClabelGuide').addEventListener('click',close);
+    d.querySelector('#okClabelGuide').addEventListener('click',close);
+  }
+
+  function showClabelGuide(){
+    ensureClabelGuide();
+    const d=document.getElementById('clabelGuideDialog');
+    const p=currentProfile(),fmt=pdfFormat();
+    const app=d.querySelector('#clabelGuideApp'),f=d.querySelector('#clabelGuideFormat'),txt=d.querySelector('#clabelGuideText');
+    if(app)app.textContent=p.app;
+    if(f)f.textContent=`${fmt.widthMm} × ${fmt.heightMm} mm`;
+    if(txt)txt.innerHTML=`iOS/Android ne permet pas à Étiquette Lorraine d’écrire directement dans <strong>${p.app}</strong>. Le PDF est créé par Étiquette Lorraine, puis importé dans l’application CLABEL.`;
+    if(!d.open)d.showModal();
+  }
+
   function renderPrinterUI(){
     ensurePrinterSettings();
     const key=state.settings.printer.profile||'clabel';
@@ -107,7 +142,7 @@
     const printBtn=document.getElementById('printNowBtn');
     const batchBtn=document.getElementById('printBatchBtn');
     if(printBtn)printBtn.textContent=p.button;
-    if(batchBtn)batchBtn.textContent=key.startsWith('clabel')?'Envoyer le lot vers '+p.app:key==='printmaster'?'Envoyer le lot vers Print Master':'Partager le lot PDF';
+    if(batchBtn)batchBtn.textContent=key.startsWith('clabel')?'Créer le lot PDF pour '+p.app:key==='printmaster'?'Envoyer le lot vers Print Master':'Partager le lot PDF';
 
     let chip=document.getElementById('printerChip');
     if(!chip){
@@ -115,6 +150,8 @@
       document.getElementById('formatChip')?.insertAdjacentElement('afterend',chip);
     }
     if(chip)chip.textContent='Imprimante : '+p.label;
+    const micro=document.querySelector('[data-view="print"] .microcopy.center');
+    if(micro&&key.startsWith('clabel'))micro.innerHTML=`Le PDF est créé localement. <strong>CLABEL ne reçoit pas automatiquement le fichier</strong> : enregistre-le dans Fichiers puis importe-le dans <strong>${p.app} → PDF Printing</strong>.`;
 
     const helpView=document.querySelector('[data-view="help"]');
     const sub=helpView?.querySelector('.section-heading p');
@@ -156,15 +193,18 @@
       if(share&&navigator.canShare?.({files:[f]})){
         try{
           await navigator.share({files:[f],title:`Étiquette ${fmt.widthMm}×${fmt.heightMm}`,text:`PDF prêt pour ${p.app}`});
+          if((state.settings?.printer?.profile||'').startsWith('clabel'))setTimeout(showClabelGuide,120);
           return true;
         }catch(e){if(e.name==='AbortError')return false}
       }
-      download(blob,name);toast('PDF enregistré pour '+p.app);return true;
+      download(blob,name);
+      if((state.settings?.printer?.profile||'').startsWith('clabel'))setTimeout(showClabelGuide,120);
+      toast('PDF enregistré — importe-le dans '+p.app);return true;
     };
   }
 
   window.initPrinterModule=async function(){
-    addStyles();ensure60x30Preset();ensurePrinterSettings();installSettingsCard();
+    addStyles();ensure60x30Preset();ensurePrinterSettings();installSettingsCard();ensureClabelGuide();
     try{await persistKV('settings',state.settings)}catch(_){}
     if(typeof renderSettings==='function')renderSettings();
     renderPrinterUI();
