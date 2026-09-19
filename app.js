@@ -1,5 +1,6 @@
 (async function(){
-  function load(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('Chargement impossible : '+src));document.head.appendChild(s)})}
+  const ASSET_VERSION='5.2.0';
+  function load(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src+(src.includes('?')?'&':'?')+'v='+ASSET_VERSION;s.onload=resolve;s.onerror=()=>reject(new Error('Chargement impossible : '+src));document.head.appendChild(s)})}
   try{
     await load('./core-v4.js');
     await load('./print-v4.js');
