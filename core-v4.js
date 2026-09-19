@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const APP_VERSION='5.2.1';
+const APP_VERSION='5.2.2';
 const DB_NAME='etiquette-lorraine-v4', DB_VERSION=1;
 const LEGACY={products:'dlc3.products',recent:'dlc3.recent',history:'dlc3.history',initials:'dlc3.initials',pin:'dlc3.pin'};
 const MODES={
