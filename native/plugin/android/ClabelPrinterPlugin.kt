@@ -61,13 +61,7 @@ class ClabelPrinterPlugin : Plugin() {
     fun listPrinters(call: PluginCall) {
         if (!ensurePermission(call)) return
         val bt = adapter ?: return call.reject("Bluetooth indisponible")
-        val hints = mutableListOf("CT", "CLABEL", "Clabel", "CLabel")
-        call.getArray("nameHints")?.toList<String>()?.let {
-            if (it.isNotEmpty()) {
-                hints.clear()
-                hints.addAll(it)
-            }
-        }
+        val hints = listOf("CT", "CLABEL", "Clabel", "CLabel")
         val devices = JSArray()
         try {
             bt.bondedDevices
