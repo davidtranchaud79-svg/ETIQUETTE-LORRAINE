@@ -6,7 +6,11 @@
     await load('./data-v4.js');
     await load('./settings-v4.js');
     await load('./platform-v4.js');
+    await load('./printer-v4.js');
     await init();
+    if(typeof initPrinterModule==='function')await initPrinterModule();
+    setTimeout(()=>window.ELPrinter?.render?.(),0);
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>window.ELPrinter?.render?.(),{once:true});
   }catch(e){
     console.error(e);
     const t=document.getElementById('toast');
