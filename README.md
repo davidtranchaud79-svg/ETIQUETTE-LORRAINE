@@ -1,6 +1,6 @@
 # Étiquette Lorraine — V4 Offline-first
 
-Application mobile/PWA pour créer des étiquettes de traçabilité en cuisine, générer des PDF aux dimensions exactes et les ouvrir dans **Print Master**.
+Application mobile/PWA pour créer des étiquettes de traçabilité en cuisine, générer des PDF aux dimensions exactes et les ouvrir dans **CLABEL / Clabel**, **Clabel trade**, **Print Master** ou une autre application compatible PDF.
 
 ## Compatibilité
 - **iPhone / iPad** via Safari et installation sur l’écran d’accueil.
@@ -19,7 +19,7 @@ Application mobile/PWA pour créer des étiquettes de traçabilité en cuisine, 
 ## Formats
 Format par défaut : **40 × 30 mm**.
 
-Formats rapides : 40×30, 50×30, 50×40, 60×40 mm. Un mode personnalisé accepte une largeur et une hauteur de 20 à 100 mm. Le PDF est généré avec une MediaBox correspondant réellement aux dimensions choisies.
+Formats rapides : 40×30, 50×30, 50×40, **60×30**, 60×40 mm. Un mode personnalisé accepte une largeur et une hauteur de 20 à 100 mm. Le PDF est généré avec une MediaBox correspondant réellement aux dimensions choisies.
 
 ## Fonctionnement hors ligne
 La V4 est conçue en **offline-first** : interface, générateur PDF et modules principaux sont préchargés par le service worker. Les produits, réglages et historiques sont conservés dans **IndexedDB**, avec migration automatique de l’ancienne base localStorage.
@@ -56,6 +56,19 @@ La synchronisation fusionne les produits par identifiant et date de modification
 3. Ouvrir l’application une première fois avec Internet.
 4. Lancer **Réglages > Diagnostic hors ligne**.
 5. Une fois le cache prêt, l’application peut fonctionner sans réseau.
+
+## Impression CLABEL
+
+Un profil imprimante est disponible dans **Réglages > Imprimante / application** :
+- **CLABEL** (application Clabel) ;
+- **CLABEL CT321D** (Clabel trade) ;
+- **CLABEL CT327D** (Clabel) ;
+- Phomemo / Print Master ;
+- PDF générique.
+
+Pour les rouleaux 60 × 30 mm, utiliser le raccourci **Passer en 60 × 30 mm**. Le PDF conserve exactement cette MediaBox.
+
+Les applications **Clabel** et **Clabel trade** disposent d'un flux d'impression PDF. Selon iOS/Android et la version installée, l'application peut apparaître dans la feuille de partage ; sinon, enregistrer le PDF puis l'importer dans l'application CLABEL.
 
 ## Impression Print Master
 1. Préparer l’étiquette.
