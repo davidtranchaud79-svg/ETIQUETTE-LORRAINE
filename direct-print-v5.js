@@ -60,38 +60,51 @@
     ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(m,titleDivider);ctx.lineTo(width-m,titleDivider);ctx.stroke();
 
-    // Bloc dates en deux colonnes.
+    // Bloc date(s). Les produits secs affichent uniquement la date d'ouverture.
     const dateTop=titleDivider+clamp(Math.round(height*0.045),7,11);
     const col2=Math.round(width*0.53);
     const labelSize=clamp(Math.round(height*0.062),10,15);
     const dateSize=clamp(Math.round(height*0.125),19,30);
     const leftLabel=ascii(label.dateLabel||'PRODUIT LE');
-    const rightLabel=ascii(label.expiryLabel||'DLC');
-
-    ctx.font='700 '+labelSize+'px Arial, sans-serif';
-    ctx.fillText(leftLabel,m,dateTop+labelSize);
-    ctx.fillText(rightLabel,col2,dateTop+labelSize);
-
+    const rightLabel=ascii(label.expiryLabel===undefined?'DLC':label.expiryLabel);
     const dateBaseline=dateTop+labelSize+dateSize+3;
-    ctx.font='900 '+dateSize+'px Arial, sans-serif';
-    let dSize=dateSize;
     const dateText=ascii(label.date||'--/--/----');
-    while(dSize>13&&ctx.measureText(dateText).width>col2-m*2){
-      dSize--;ctx.font='900 '+dSize+'px Arial, sans-serif';
-    }
-    ctx.fillText(dateText,m,dateBaseline);
 
-    const expiry=ascii(label.detail||label.dlc||'--/--/----');
-    let eSize=dateSize;ctx.font='900 '+eSize+'px Arial, sans-serif';
-    while(eSize>13&&ctx.measureText(expiry).width>width-col2-m){
-      eSize--;ctx.font='900 '+eSize+'px Arial, sans-serif';
-    }
-    ctx.fillText(expiry,col2,dateBaseline);
+    if(label.singleDate){
+      ctx.font='700 '+labelSize+'px Arial, sans-serif';
+      const lw=ctx.measureText(leftLabel).width;
+      ctx.fillText(leftLabel,(width-lw)/2,dateTop+labelSize);
+      let dSize=dateSize+3;
+      ctx.font='900 '+dSize+'px Arial, sans-serif';
+      while(dSize>13&&ctx.measureText(dateText).width>width-2*m){
+        dSize--;ctx.font='900 '+dSize+'px Arial, sans-serif';
+      }
+      const dw=ctx.measureText(dateText).width;
+      ctx.fillText(dateText,(width-dw)/2,dateBaseline);
+    }else{
+      ctx.font='700 '+labelSize+'px Arial, sans-serif';
+      ctx.fillText(leftLabel,m,dateTop+labelSize);
+      ctx.fillText(rightLabel,col2,dateTop+labelSize);
 
-    // Séparateur vertical des dates.
+      ctx.font='900 '+dateSize+'px Arial, sans-serif';
+      let dSize=dateSize;
+      while(dSize>13&&ctx.measureText(dateText).width>col2-m*2){
+        dSize--;ctx.font='900 '+dSize+'px Arial, sans-serif';
+      }
+      ctx.fillText(dateText,m,dateBaseline);
+
+      const expiry=ascii(label.detail||label.dlc||'--/--/----');
+      let eSize=dateSize;ctx.font='900 '+eSize+'px Arial, sans-serif';
+      while(eSize>13&&ctx.measureText(expiry).width>width-col2-m){
+        eSize--;ctx.font='900 '+eSize+'px Arial, sans-serif';
+      }
+      ctx.fillText(expiry,col2,dateBaseline);
+
+      ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(col2-8,dateTop);ctx.lineTo(col2-8,Math.min(Math.round(height*0.75),dateBaseline+5));ctx.stroke();
+    }
+
     const datesBottom=Math.min(Math.round(height*0.75),dateBaseline+5);
-    ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(col2-8,dateTop);ctx.lineTo(col2-8,datesBottom);ctx.stroke();
 
     // Pied : LOT | température/conservation | initiales.
     const footerTop=Math.min(height-m-30,datesBottom+5);
