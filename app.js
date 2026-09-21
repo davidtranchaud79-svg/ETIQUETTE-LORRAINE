@@ -1,5 +1,5 @@
 (async function(){
-  const ASSET_VERSION='5.2.3';
+  const ASSET_VERSION='5.2.4';
   function load(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src+(src.includes('?')?'&':'?')+'v='+ASSET_VERSION;s.onload=resolve;s.onerror=()=>reject(new Error('Chargement impossible : '+src));document.head.appendChild(s)})}
   try{
     await load('./core-v4.js');
