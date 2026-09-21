@@ -1,10 +1,11 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const APP_VERSION='5.2.3';
+const APP_VERSION='5.2.4';
 const DB_NAME='etiquette-lorraine-v4', DB_VERSION=1;
 const LEGACY={products:'dlc3.products',recent:'dlc3.recent',history:'dlc3.history',initials:'dlc3.initials',pin:'dlc3.pin'};
 const MODES={
   production:{label:'Production',key:'daysProduction',dateLabel:'PROD. LE',expiryLabel:'DLC'},
   opening:{label:'Ouverture',key:'daysOpening',dateLabel:'OUVERT LE',expiryLabel:'DLC'},
+  dryOpening:{label:'Produit sec',key:null,dateLabel:'OUVERT LE',expiryLabel:''},
   defrost:{label:'Décongélation',key:'daysDefrost',dateLabel:'DÉCONG. LE',expiryLabel:'DLC'},
   freeze:{label:'Congélation',key:null,dateLabel:'CONGELÉ LE',expiryLabel:'LIMITE'},
   vacuum:{label:'Sous vide',key:'daysVacuum',dateLabel:'MIS S/V LE',expiryLabel:'DLC'},
