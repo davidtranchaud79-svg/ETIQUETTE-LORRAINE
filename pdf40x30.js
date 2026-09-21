@@ -53,12 +53,21 @@
 
     const col2=W/2+1.5*s,halfW=W/2-m-2.2*s;
     const labSize=5.5*s;
-    c+=text(m,H-46.2*s,labSize,'F2',l.dateLabel||'DATE');
-    c+=text(col2,H-46.2*s,labSize,'F2',l.expiryLabel||'DLC');
-    const ds1=fitSize(l.date||'--/--/----',halfW,9.4*s,7.2*s,true);
-    const ds2=fitSize(l.dlc||'--/--/----',halfW,9.4*s,7.2*s,true);
-    c+=text(m,H-56.2*s,ds1,'F1',l.date||'--/--/----');
-    c+=text(col2,H-56.2*s,ds2,'F1',l.dlc||'--/--/----');
+    if(l.singleDate){
+      const labelText=l.dateLabel||'OUVERT LE';
+      const labelW=approxWidth(labelText,labSize,false);
+      c+=text((W-labelW)/2,H-46.2*s,labSize,'F2',labelText);
+      const ds=fitSize(l.date||'--/--/----',inner,10.4*s,7.2*s,true);
+      const dateW=approxWidth(l.date||'--/--/----',ds,true);
+      c+=text((W-dateW)/2,H-56.2*s,ds,'F1',l.date||'--/--/----');
+    }else{
+      c+=text(m,H-46.2*s,labSize,'F2',l.dateLabel||'DATE');
+      c+=text(col2,H-46.2*s,labSize,'F2',l.expiryLabel||'DLC');
+      const ds1=fitSize(l.date||'--/--/----',halfW,9.4*s,7.2*s,true);
+      const ds2=fitSize(l.dlc||'--/--/----',halfW,9.4*s,7.2*s,true);
+      c+=text(m,H-56.2*s,ds1,'F1',l.date||'--/--/----');
+      c+=text(col2,H-56.2*s,ds2,'F1',l.dlc||'--/--/----');
+    }
 
     const lot=l.lot?`Lot : ${l.lot}`:'Lot : —';
     const initials=l.initials?String(l.initials).toUpperCase():'—';
