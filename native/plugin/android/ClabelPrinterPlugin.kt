@@ -144,6 +144,20 @@ class ClabelPrinterPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun diagnostics(call: PluginCall) {
+        val r = JSObject()
+        r.put("platform", "android")
+        r.put("sdk", Build.VERSION.SDK_INT)
+        r.put("bluetoothAvailable", adapter != null)
+        r.put("bluetoothEnabled", adapter?.isEnabled == true)
+        r.put("permission", if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) "not-required" else getPermissionState("bluetooth").toString())
+        r.put("connected", socket?.isConnected == true)
+        r.put("address", connectedAddress)
+        r.put("transport", if (socket?.isConnected == true) "classic" else "")
+        call.resolve(r)
+    }
+
+    @PluginMethod
     fun status(call: PluginCall) {
         val r = JSObject()
         r.put("connected", socket?.isConnected == true)
