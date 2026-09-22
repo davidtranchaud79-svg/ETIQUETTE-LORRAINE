@@ -5,7 +5,20 @@
   const DOTS_PER_MM=DPI/25.4;
   const SPP_UUID='00001101-0000-1000-8000-00805F9B34FB';
 
-  function nativePlugin(){return window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.ClabelPrinter||null}
+  let registeredNativePlugin=null;
+  function nativePlugin(){
+    const cap=window.Capacitor;
+    if(!cap)return null;
+    if(cap.Plugins&&cap.Plugins.ClabelPrinter)return cap.Plugins.ClabelPrinter;
+    if(registeredNativePlugin)return registeredNativePlugin;
+    try{
+      if(typeof cap.registerPlugin==='function'){
+        registeredNativePlugin=cap.registerPlugin('ClabelPrinter');
+        return registeredNativePlugin;
+      }
+    }catch(_){}
+    return null;
+  }
   function nativeAvailable(){try{return !!nativePlugin() && !!(window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())}catch(_){return false}}
   function nativePlatform(){try{return window.Capacitor&&window.Capacitor.getPlatform?window.Capacitor.getPlatform():'web'}catch(_){return'web'}}
   function mmDots(mm){return Math.max(1,Math.round(Number(mm)*DOTS_PER_MM))}
