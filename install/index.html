@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#741e32">
+  <meta name="description" content="Installation d'Étiquette Lorraine pour les équipes de cuisine, sur Android et iPhone.">
+  <title>Installer Étiquette Lorraine</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#241c20;background:#f7f3f1}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:linear-gradient(155deg,#fbf8f6,#eee6e4)}
+    main{max-width:600px;margin:0 auto;padding:clamp(22px,6vw,52px) 18px 60px}
+    .mark{display:inline-flex;align-items:center;gap:12px;color:#741e32;font-size:13px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+    .symbol{display:grid;place-items:center;width:45px;height:45px;border-radius:13px;background:#741e32;color:white;font-size:24px}
+    h1{font-size:clamp(31px,7vw,46px);letter-spacing:-.04em;line-height:1.07;margin:29px 0 14px}
+    .lead{font-size:16px;line-height:1.55;color:#655c61;margin:0 0 27px}
+    .card{background:#fff;border:1px solid #e7dcde;border-radius:20px;padding:22px;margin:14px 0;box-shadow:0 8px 25px #3c22200a}
+    .card h2{font-size:21px;margin:0 0 7px}
+    .card p{font-size:14px;color:#675d63;line-height:1.5;margin:0 0 17px}
+    .platform{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8b4b5c;margin:0 0 9px}
+    .action{display:block;width:100%;text-align:center;padding:15px 16px;border-radius:12px;background:#741e32;color:#fff;text-decoration:none;font-size:15px;font-weight:750}
+    .action[aria-disabled="true"]{background:#eae3e4;color:#777075;pointer-events:none;cursor:not-allowed}
+    .status{display:block;margin-top:12px;font-size:12px;color:#82777d}
+    .note{margin-top:25px;font-size:13px;line-height:1.55;color:#665d61}
+    .foot{margin-top:26px;font-size:12px;color:#8b8287;text-align:center}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+<main>
+  <div class="mark"><span class="symbol" aria-hidden="true">É</span> Étiquette Lorraine</div>
+  <h1>Installer l'application</h1>
+  <p class="lead">L'étiquetage des préparations et le suivi des dates, directement sur votre téléphone. Choisissez votre appareil ci-dessous.</p>
+  <section class="card" id="android">
+    <div class="platform">Samsung et autres téléphones Android</div>
+    <h2>Android</h2>
+    <p>Téléchargez le fichier APK de l'application. Android pourra demander d'autoriser l'installation depuis votre navigateur.</p>
+    <a class="action" id="androidLink" aria-disabled="true" tabindex="-1">APK en préparation</a>
+    <span class="status" id="androidStatus">La version Android est en cours de validation.</span>
+  </section>
+  <section class="card" id="ios">
+    <div class="platform">Apple iPhone et iPad</div>
+    <h2>iPhone / iPad</h2>
+    <p>Installez TestFlight depuis l'App Store, puis rejoignez les testeurs d'Étiquette Lorraine grâce au lien d'invitation.</p>
+    <a class="action" id="iosLink" aria-disabled="true" tabindex="-1">Invitation TestFlight en préparation</a>
+    <span class="status" id="iosStatus">L'invitation sera activée après la mise en ligne de la version iOS.</span>
+  </section>
+  <section class="card" id="web">
+    <div class="platform">Ordinateurs et navigateurs</div>
+    <h2>Version Web</h2>
+    <p>Une solution de secours pour créer des étiquettes au format PDF. L'impression Bluetooth directe nécessite l'application native.</p>
+    <a class="action" id="webLink" aria-disabled="true" tabindex="-1">Accès Web en préparation</a>
+    <span class="status" id="webStatus">Accès non encore activé.</span>
+  </section>
+  <p class="note">Cette page est destinée aux collaborateurs autorisés. Les durées de conservation et règles PMS doivent être vérifiées et configurées par l'établissement. La compatibilité de l'impression directe avec l'imprimante CLABEL CT321D est encore en cours de validation.</p>
+  <div class="foot">Étiquette Lorraine · Distribution aux équipes</div>
+</main>
+<script>
+(async function(){
+  const cfg=await fetch('./config.json',{cache:'no-store'}).then(r=>r.ok?r.json():{}).catch(()=>({}));
+  function valid(url){try{const u=new URL(url);return u.protocol==='https:';}catch(_){return false;}}
+  function set(id,url,label,status){
+    const a=document.getElementById(id+'Link'),s=document.getElementById(id+'Status');
+    if(valid(url)){
+      a.href=url;a.textContent=label;a.removeAttribute('aria-disabled');a.removeAttribute('tabindex');
+      a.rel='noopener noreferrer';s.textContent=status;
+    }
+  }
+  set('android',cfg.androidApkUrl,'Télécharger Étiquette Lorraine (APK)','Version Android disponible.');
+  set('ios',cfg.iosTestFlightUrl,'Installer avec TestFlight','Lien d’invitation TestFlight disponible.');
+  set('web',cfg.webAppUrl,'Ouvrir Étiquette Lorraine','La version Web génère des PDF ; le Bluetooth direct n’y est pas disponible.');
+  const agent=navigator.userAgent||'';
+  const id=/Android/i.test(agent)?'android':/iPhone|iPad|iPod/i.test(agent)?'ios':'';
+  if(id){document.getElementById(id).style.borderColor='#741e32';}
+})();
+</script>
+</body>
+</html>
