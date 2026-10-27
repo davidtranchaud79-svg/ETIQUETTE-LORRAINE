@@ -41,115 +41,103 @@
 
   // Rendu thermique CLABEL : fond papier blanc, encre noire uniquement.
   // Modèle validé : produit / dates / lot-température-initiales, sans logo ni pictogramme.
+  // Mise en page native calibrée pour les rouleaux 50 × 30 mm à 203 DPI.
+  // Les zones sont fixes : titre 0-40 %, dates 43-70 %, traçabilité 75-100 %.
   function drawLabel(label,fmt){
     const width=mmDots(fmt.widthMm),height=mmDots(fmt.heightMm);
     const c=document.createElement('canvas');c.width=width;c.height=height;
     const ctx=c.getContext('2d',{willReadFrequently:true});
     ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
-    ctx.fillStyle='#000';ctx.strokeStyle='#000';
-    ctx.lineCap='butt';
+    ctx.fillStyle='#000';ctx.strokeStyle='#000';ctx.lineCap='butt';
+    const m=Math.max(8,Math.round(width*0.025));
+    const right=width-m,usable=width-2*m;
+    const fit=function(value,maxWidth,start,min,weight){
+      let size=start;
+      while(size>min){ctx.font=weight+' '+size+'px Arial, sans-serif';if(ctx.measureText(value).width<=maxWidth)break;size--}
+      return size;
+    };
+    const shorten=function(value,maxWidth,size,weight){
+      ctx.font=weight+' '+size+'px Arial, sans-serif';
+      if(ctx.measureText(value).width<=maxWidth)return value;
+      let out=value;
+      while(out.length>1&&ctx.measureText(out+'…').width>maxWidth)out=out.slice(0,-1);
+      return out.trimEnd()+'…';
+    };
+    ctx.lineWidth=1.5;ctx.strokeRect(2,2,width-4,height-4);
 
-    const m=clamp(Math.round(width*0.025),7,14);
-    const border=clamp(Math.round(height*0.009),1,2);
-    ctx.lineWidth=border;
-    ctx.strokeRect(2,2,width-4,height-4);
-
-    // Titre produit : priorité maximale à la lisibilité, 1 à 2 lignes.
-    const product=String(label.product||'PRODUIT').toUpperCase();
-    const titleMaxWidth=width-2*m;
-    let productSize=clamp(Math.round(height*0.19),24,44);
-    let lines=[];
-    while(productSize>=18){
-      ctx.font='900 '+productSize+'px Arial, sans-serif';
-      lines=wrapCanvas(ctx,product,titleMaxWidth,2);
-      if(lines.length<=2 && lines.every(function(x){return ctx.measureText(x).width<=titleMaxWidth}))break;
-      productSize--;
+    const product=String(label.product||'PRODUIT').toUpperCase().trim();
+    const titleMax=Math.round(height*0.39),titleStart=m+5;
+    let titleSize=clamp(Math.round(height*0.145),22,34),lines=[];
+    for(;titleSize>=19;titleSize--){
+      ctx.font='900 '+titleSize+'px Arial, sans-serif';
+      lines=wrapCanvas(ctx,product,usable,2);
+      if(lines.length===1&&ctx.measureText(product).width>usable)continue;
+      if(lines.every(x=>ctx.measureText(x).width<=usable)&&lines.length*(titleSize+3)<=titleMax-titleStart)break;
     }
-    let y=m+productSize;
-    lines.forEach(function(line){ctx.fillText(line,m,y);y+=productSize+1});
+    titleSize=Math.max(19,titleSize);
+    // Ne jamais perdre les derniers mots du nom du produit.
+    const words=product.split(/\s+/),result=[];let line='';
+    ctx.font='900 '+titleSize+'px Arial, sans-serif';
+    for(const word of words){
+      const test=line?line+' '+word:word;
+      if(line&&ctx.measureText(test).width>usable){result.push(line);line=word}else line=test;
+    }
+    if(line)result.push(line);
+    if(result.length>2)result.splice(1,result.length-1,result.slice(1).join(' '));
+    result.slice(0,2).forEach((raw,i)=>{
+      const value=shorten(raw,usable,titleSize,'900');
+      ctx.font='900 '+titleSize+'px Arial, sans-serif';
+      ctx.fillText(value,m,titleStart+titleSize+i*(titleSize+3));
+    });
+    const divider=Math.round(height*0.42);
+    ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(m,divider);ctx.lineTo(right,divider);ctx.stroke();
 
-    // Séparation sous le produit.
-    const titleDivider=Math.min(Math.round(height*0.40),y+4);
-    ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(m,titleDivider);ctx.lineTo(width-m,titleDivider);ctx.stroke();
-
-    // Bloc date(s). Les produits secs affichent uniquement la date d'ouverture.
-    const dateTop=titleDivider+clamp(Math.round(height*0.045),7,11);
-    const col2=Math.round(width*0.53);
-    const labelSize=clamp(Math.round(height*0.062),10,15);
-    const dateSize=clamp(Math.round(height*0.125),19,30);
-    const leftLabel=ascii(label.dateLabel||'PRODUIT LE');
-    const rightLabel=ascii(label.expiryLabel===undefined?'DLC':label.expiryLabel);
-    const dateBaseline=dateTop+labelSize+dateSize+3;
-    const dateText=ascii(label.date||'--/--/----');
-
+    const top=divider+Math.round(height*0.035);
+    const col2=Math.round(width*0.53),gap=12;
+    const labelSize=clamp(Math.round(height*0.058),10,14);
+    const dateStart=clamp(Math.round(height*0.118),19,27);
+    const leftDate=ascii(label.date||'--/--/----');
+    const expiry=ascii(label.detail||label.dlc||'--/--/----');
+    const baseline=top+labelSize+dateStart+6;
+    ctx.font='700 '+labelSize+'px Arial, sans-serif';
     if(label.singleDate){
-      ctx.font='700 '+labelSize+'px Arial, sans-serif';
-      const lw=ctx.measureText(leftLabel).width;
-      ctx.fillText(leftLabel,(width-lw)/2,dateTop+labelSize);
-      let dSize=dateSize+3;
-      ctx.font='900 '+dSize+'px Arial, sans-serif';
-      while(dSize>13&&ctx.measureText(dateText).width>width-2*m){
-        dSize--;ctx.font='900 '+dSize+'px Arial, sans-serif';
-      }
-      const dw=ctx.measureText(dateText).width;
-      ctx.fillText(dateText,(width-dw)/2,dateBaseline);
+      const title=ascii(label.dateLabel||'OUVERT LE');
+      ctx.fillText(title,(width-ctx.measureText(title).width)/2,top+labelSize);
+      const ds=fit(leftDate,usable,dateStart+3,15,'900');
+      ctx.font='900 '+ds+'px Arial, sans-serif';
+      ctx.fillText(leftDate,(width-ctx.measureText(leftDate).width)/2,baseline);
     }else{
-      ctx.font='700 '+labelSize+'px Arial, sans-serif';
-      ctx.fillText(leftLabel,m,dateTop+labelSize);
-      ctx.fillText(rightLabel,col2,dateTop+labelSize);
-
-      ctx.font='900 '+dateSize+'px Arial, sans-serif';
-      let dSize=dateSize;
-      while(dSize>13&&ctx.measureText(dateText).width>col2-m*2){
-        dSize--;ctx.font='900 '+dSize+'px Arial, sans-serif';
-      }
-      ctx.fillText(dateText,m,dateBaseline);
-
-      const expiry=ascii(label.detail||label.dlc||'--/--/----');
-      let eSize=dateSize;ctx.font='900 '+eSize+'px Arial, sans-serif';
-      while(eSize>13&&ctx.measureText(expiry).width>width-col2-m){
-        eSize--;ctx.font='900 '+eSize+'px Arial, sans-serif';
-      }
-      ctx.fillText(expiry,col2,dateBaseline);
-
-      ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(col2-8,dateTop);ctx.lineTo(col2-8,Math.min(Math.round(height*0.75),dateBaseline+5));ctx.stroke();
+      const leftW=col2-m-gap,rightW=right-col2;
+      ctx.fillText(shorten(ascii(label.dateLabel||'PROD. LE'),leftW,labelSize,'700'),m,top+labelSize);
+      ctx.fillText(shorten(ascii(label.expiryLabel||'DLC'),rightW,labelSize,'700'),col2,top+labelSize);
+      const ds=fit(leftDate,leftW,dateStart,16,'900');
+      const es=fit(expiry,rightW,dateStart,16,'900');
+      ctx.font='900 '+ds+'px Arial, sans-serif';ctx.fillText(shorten(leftDate,leftW,ds,'900'),m,baseline);
+      ctx.font='900 '+es+'px Arial, sans-serif';ctx.fillText(shorten(expiry,rightW,es,'900'),col2,baseline);
+      ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(col2-7,top);ctx.lineTo(col2-7,Math.round(height*0.71));ctx.stroke();
     }
 
-    const datesBottom=Math.min(Math.round(height*0.75),dateBaseline+5);
-
-    // Pied : LOT | température/conservation | initiales.
-    const footerTop=Math.min(height-m-30,datesBottom+5);
-    ctx.beginPath();ctx.moveTo(m,footerTop);ctx.lineTo(width-m,footerTop);ctx.stroke();
-
-    const footerY=height-m-5;
-    const sep1=Math.round(width*0.34),sep2=Math.round(width*0.70);
-    ctx.beginPath();ctx.moveTo(sep1,footerTop+4);ctx.lineTo(sep1,footerY+2);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(sep2,footerTop+4);ctx.lineTo(sep2,footerY+2);ctx.stroke();
-
-    const small=clamp(Math.round(height*0.052),9,13);
-    const strong=clamp(Math.round(height*0.072),12,17);
-    const lot=ascii(label.lot||'-');
-    ctx.font='700 '+small+'px Arial, sans-serif';
-    ctx.fillText('LOT :',m,footerTop+small+4);
-    ctx.font='900 '+strong+'px Arial, sans-serif';
-    ctx.fillText(lot,m,Math.min(footerY,footerTop+small+strong+6));
-
-    const storage=ascii(String(label.storage||'-'));
-    let sSize=strong;ctx.font='900 '+sSize+'px Arial, sans-serif';
-    const storageMax=sep2-sep1-12;
-    while(sSize>9&&ctx.measureText(storage).width>storageMax){
-      sSize--;ctx.font='900 '+sSize+'px Arial, sans-serif';
-    }
-    const sw=ctx.measureText(storage).width;
-    ctx.fillText(storage,sep1+(storageMax-sw)/2+6,footerY);
-
-    const initials=ascii(String(label.initials||'-').toUpperCase());
-    ctx.font='900 '+strong+'px Arial, sans-serif';
-    const iw=ctx.measureText(initials).width;
-    ctx.fillText(initials,sep2+(width-m-sep2-iw)/2,footerY);
-
+    const footerTop=Math.round(height*0.76),footerBottom=height-m-3;
+    ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(m,footerTop);ctx.lineTo(right,footerTop);ctx.stroke();
+    const sep1=Math.round(width*0.35),sep2=Math.round(width*0.73);
+    ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sep1,footerTop+3);ctx.lineTo(sep1,footerBottom+2);ctx.moveTo(sep2,footerTop+3);ctx.lineTo(sep2,footerBottom+2);ctx.stroke();
+    const small=clamp(Math.round(height*0.05),10,13);
+    const strong=clamp(Math.round(height*0.071),13,18);
+    ctx.font='700 '+small+'px Arial, sans-serif';ctx.fillText('LOT',m,footerTop+small+4);
+    const lot=ascii(label.lot||'-'),lotW=sep1-m-7;
+    const lotSize=fit(lot,lotW,strong,10,'900');
+    ctx.font='900 '+lotSize+'px Arial, sans-serif';
+    ctx.fillText(shorten(lot,lotW,lotSize,'900'),m,footerBottom);
+    const storage=ascii(label.storage||'-'),storageW=sep2-sep1-12;
+    const storageSize=fit(storage,storageW,strong,10,'700');
+    ctx.font='700 '+storageSize+'px Arial, sans-serif';
+    const st=shorten(storage,storageW,storageSize,'700');
+    ctx.fillText(st,sep1+6+(storageW-ctx.measureText(st).width)/2,footerBottom);
+    const initials=ascii(label.initials||'-').toUpperCase(),initialsW=right-sep2-8;
+    const initialsSize=fit(initials,initialsW,strong,10,'900');
+    ctx.font='900 '+initialsSize+'px Arial, sans-serif';
+    const it=shorten(initials,initialsW,initialsSize,'900');
+    ctx.fillText(it,sep2+4+(initialsW-ctx.measureText(it).width)/2,footerBottom);
     return c;
   }
 
@@ -226,7 +214,7 @@
       const platform=nativePlatform(),platformLabel=platform==='ios'?'iPhone / iPad':platform==='android'?'Android':'Natif';
       card.innerHTML='<div class="card-title-row"><div><h3>Impression directe Bluetooth</h3><p>'+platformLabel+' · connexion CLABEL directe, sans passer par l’application Clabel.</p></div><span id="nativePrintBadge" class="platform-badge">'+platformLabel+'</span></div>'+
         '<label class="field-label" for="nativePrinterSelect">Imprimante</label><select id="nativePrinterSelect" class="input"><option value="">Rechercher une imprimante…</option></select>'+
-        '<div class="button-row" style="margin-top:10px"><button id="scanNativePrinters" class="secondary-btn">Rechercher</button><button id="connectNativePrinter" class="primary-btn">Connecter</button><button id="testNativePrinter" class="secondary-btn">Test 60 × 30</button><button id="diagNativePrinter" class="secondary-btn">Diagnostic</button><button id="disconnectNativePrinter" class="secondary-btn">Déconnecter</button></div>'+
+        '<div class="button-row" style="margin-top:10px"><button id="scanNativePrinters" class="secondary-btn">Rechercher</button><button id="connectNativePrinter" class="primary-btn">Connecter</button><button id="testNativePrinter" class="secondary-btn">Test 50 × 30</button><button id="diagNativePrinter" class="secondary-btn">Diagnostic</button><button id="disconnectNativePrinter" class="secondary-btn">Déconnecter</button></div>'+
         '<small id="nativePrintStatus" class="muted-line">Aucune imprimante connectée.</small><pre id="nativePrintDiag" style="display:none;white-space:pre-wrap;word-break:break-word;margin-top:10px;font-size:10px;line-height:1.35;max-height:180px;overflow:auto"></pre>';
     }else{
       card.innerHTML='<h3>Impression directe Bluetooth</h3><p>Le module d’impression directe n’est pas détecté.</p>'+
@@ -301,12 +289,12 @@
   async function testUI(){
     const status=document.getElementById('nativePrintStatus');
     try{
-      if(status)status.textContent='Test 60 × 30 en cours…';
+      if(status)status.textContent='Test 50 × 30 en cours…';
       const sample={product:'TEST CLABEL',type:'PRODUCTION',date:'19/09/2026',dlc:'20/09/2026',detail:'',lot:'TEST',initials:'DT',storage:'+0/+3 °C',dateLabel:'PROD. LE',expiryLabel:'DLC'};
-      const fmt={widthMm:60,heightMm:30},job=tsplJob([sample],fmt);
-      const result=await pluginCall('write',{base64:bytesToBase64(job),protocol:'tspl',widthMm:60,heightMm:30});
+      const fmt={widthMm:50,heightMm:30},job=tsplJob([sample],fmt);
+      const result=await pluginCall('write',{base64:bytesToBase64(job),protocol:'tspl',widthMm:50,heightMm:30});
       if(status)status.textContent='Test envoyé à l’imprimante.';
-      toast('Test 60 × 30 envoyé');
+      toast('Test 50 × 30 envoyé');
       return result;
     }catch(e){
       if(status)status.textContent='Test impossible : '+e.message;
