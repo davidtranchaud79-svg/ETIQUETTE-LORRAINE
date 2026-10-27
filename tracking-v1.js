@@ -19,7 +19,7 @@ function init(){
  <label class="field-label" for="elMonth">Mois à consulter</label><input id="elMonth" class="input" type="month" />
  <div id="elTrackingSummary" class="el-tracking-summary" aria-live="polite"></div>
  <div id="elTrackingContent" class="stack"></div>
- <button type="button" id="elExportXlsx" class="primary-btn full">Exporter le mois en Excel (.xlsx)</button>
+ <button type="button" id="elExportXlsx" class="primary-btn full">Exporter le mois en Excel (.xlsx)</button><button type="button" id="elExportAllXlsx" class="secondary-btn full">Exporter toutes les données de cet onglet (.xlsx)</button>
  <div id="elLossForm" hidden><h3>Enregistrer une perte</h3>
  <form id="elLossEntry"><label class="field-label" for="elLossDate">Date</label><input class="input" type="date" id="elLossDate" required />
  <label class="field-label" for="elLossProduct">Produit</label><input class="input" id="elLossProduct" list="elLossProducts" maxlength="100" required /><datalist id="elLossProducts"></datalist>
@@ -38,8 +38,11 @@ function init(){
  card.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;refresh()}));
  $('elMonth').addEventListener('change',refresh);
  $('elExportXlsx').addEventListener('click',()=>exportMonth(tab));
+ $('elExportAllXlsx').addEventListener('click',()=>exportMonth(tab,true));
  $('elLossEntry').addEventListener('submit',e=>{e.preventDefault();const qty=Number($('elLossQty').value);if(!Number.isFinite(qty)||qty<=0)return alert('Quantité invalide');addLoss({date:$('elLossDate').value,product:$('elLossProduct').value.trim(),qty,unit:$('elLossUnit').value,reason:$('elLossReason').value,lot:$('elLossLot').value.trim(),initials:$('elLossActor').value.trim().toUpperCase(),comment:$('elLossComment').value.trim()});$('elLossQty').value='';$('elLossComment').value='';$('elMonth').value=$('elLossDate').value.slice(0,7);refresh()});
- card.addEventListener('click',e=>{const b=e.target.closest('[data-remove-loss]');if(!b)return;const r=losses.find(x=>x.id===b.dataset.removeLoss);if(!r||!confirm('Supprimer cette perte ?'))return;losses=losses.filter(x=>x.id!==r.id);save();refresh()});
+ card.addEventListener('click',async e=>{const edit=e.target.closest('[data-edit-loss]');if(edit){const r=losses.find(x=>x.id===edit.dataset.editLoss);if(!r)return;const product=prompt('Produit :',r.product);if(product===null)return;if(!product.trim())return alert('Produit obligatoire');const date=prompt('Date (AAAA-MM-JJ) :',r.date);if(date===null)return;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime()))return alert('Date invalide');const quantity=prompt('Quantité :',String(r.qty));if(quantity===null)return;const qty=Number(quantity.replace(',','.'));if(!Number.isFinite(qty)||qty<=0)return alert('Quantité invalide');const unit=prompt('Unité (kg, g, pièce, L, mL, portion) :',r.unit);if(unit===null)return;if(!['kg','g','pièce','L','mL','portion'].includes(unit.trim()))return alert('Unité invalide');const reason=prompt('Motif :',r.reason||'');if(reason===null)return;const lot=prompt('Lot :',r.lot||'');if(lot===null)return;const initials=prompt('Initiales :',r.initials||'');if(initials===null)return;const comment=prompt('Commentaire :',r.comment||'');if(comment===null)return;Object.assign(r,{product:product.trim(),date,qty,unit:unit.trim(),reason:reason.trim(),lot:lot.trim(),initials:initials.trim().toUpperCase(),comment:comment.trim(),updatedAt:new Date().toISOString()});save();refresh();return}
+ const historyEdit=e.target.closest('[data-edit-history]');if(historyEdit){const h=state.history.find(x=>x.id===historyEdit.dataset.editHistory),x=h?.items?.[Number(historyEdit.dataset.itemIndex)];if(!x)return;const product=prompt('Produit de cette ligne :',x.product||'');if(product===null)return;if(!product.trim())return alert('Produit obligatoire');const date=prompt('Date de départ (AAAA-MM-JJ) :',x.date||'');if(date===null)return;if(date&&!/^\d{4}-\d{2}-\d{2}$/.test(date))return alert('Date invalide');const dlc=prompt('DLC (AAAA-MM-JJ) :',x.dlc||'');if(dlc===null)return;if(dlc&&!/^\d{4}-\d{2}-\d{2}$/.test(dlc))return alert('DLC invalide');const lot=prompt('Lot :',x.lot||'');if(lot===null)return;const initials=prompt('Initiales :',x.initials||'');if(initials===null)return;const quantity=prompt('Nombre d’étiquettes :',String(x.qty||1));if(quantity===null)return;const qty=Number(quantity);if(!Number.isInteger(qty)||qty<1)return alert('Nombre invalide');Object.assign(x,{product:product.trim(),date,dlc,lot:lot.trim(),initials:initials.trim().toUpperCase(),qty,updatedAt:new Date().toISOString()});h.count=h.items.reduce((n,i)=>n+(Number(i.qty)||0),0);h.updatedAt=new Date().toISOString();await persistKV('history',state.history);refresh();window.ELDashboard?.refresh?.();alert('Historique corrigé. Cette correction ne réimprime pas les étiquettes et ne modifie pas les lots DLC déjà suivis.');return}
+ const b=e.target.closest('[data-remove-loss]');if(!b)return;const r=losses.find(x=>x.id===b.dataset.removeLoss);if(!r||!confirm('Supprimer cette perte ?'))return;losses=losses.filter(x=>x.id!==r.id);save();refresh()});
  function render(t){
   card.querySelectorAll('[data-tab]').forEach(b=>{b.classList.toggle('primary-btn',b.dataset.tab===t);b.classList.toggle('secondary-btn',b.dataset.tab!==t)});
   $('elLossForm').hidden=t!=='losses';const m=$('elMonth').value||month(),box=$('elTrackingContent');box.innerHTML='';
@@ -47,7 +50,7 @@ function init(){
    const hs=((typeof state!=='undefined'?state.history:[])).filter(x=>x.createdAt?.slice(0,7)===m);
    const rows=hs.flatMap(h=>(h.items||[]).map(x=>({...x,createdAt:h.createdAt,kind:h.kind})));
    $('elTrackingSummary').textContent=rows.length+' ligne(s) · '+rows.filter(x=>/Bluetooth/i.test(x.kind||'')).reduce((n,x)=>n+(Number(x.qty)||0),0)+' étiquette(s) envoyée(s) · '+rows.filter(x=>!/Bluetooth/i.test(x.kind||'')).reduce((n,x)=>n+(Number(x.qty)||0),0)+' PDF préparé(s)';
-   rows.forEach(x=>box.appendChild(item(x.product,x.createdAt+' · '+x.type+' · DLC '+(x.dlc||'—')+' · Lot '+(x.lot||'—')+' · ×'+x.qty)));
+   hs.forEach(h=>(h.items||[]).forEach((x,i)=>{const row=item(x.product,h.createdAt+' · '+x.type+' · DLC '+(x.dlc||'—')+' · Lot '+(x.lot||'—')+' · ×'+x.qty);row.appendChild(el('button',{type:'button',class:'mini-btn','data-edit-history':h.id,'data-item-index':String(i)},'Modifier'));box.appendChild(row)}));
   }else if(t==='dlc'){
    const rs=window.ELDlcReminders?.getRecords?.().filter(x=>x.dlc?.slice(0,7)===m)||[];
    $('elTrackingSummary').textContent=rs.length+' lot(s) avec DLC ce mois';
@@ -55,18 +58,18 @@ function init(){
   }else{
    const rs=losses.filter(x=>x.date?.slice(0,7)===m).sort((a,b)=>b.date.localeCompare(a.date));
    $('elTrackingSummary').textContent=rs.length+' perte(s) enregistrée(s) · quantités détaillées par unité';
-   rs.forEach(x=>{const row=item(x.product,x.date+' · '+x.qty+' '+x.unit+' · '+x.reason+' · '+(x.initials||'—'));const btn=el('button',{type:'button',class:'mini-btn danger','data-remove-loss':x.id},'Supprimer');row.appendChild(btn);box.appendChild(row)});
+   rs.forEach(x=>{const row=item(x.product,x.date+' · '+x.qty+' '+x.unit+' · '+x.reason+' · '+(x.initials||'—'));const edit=el('button',{type:'button',class:'mini-btn','data-edit-loss':x.id},'Modifier');row.appendChild(edit);const btn=el('button',{type:'button',class:'mini-btn danger','data-remove-loss':x.id},'Supprimer');row.appendChild(btn);box.appendChild(row)});
    $('elLossProducts').innerHTML=((typeof state!=='undefined'?state.products:[])).filter(x=>!x.deleted).map(x=>'<option value="'+safe(x.name)+'"></option>').join('');
   }
   if(!box.children.length)box.appendChild(el('p',{},'Aucune donnée pour ce mois.'));
  }
  function item(title,detail){const row=el('div',{class:'history-item'}),info=el('div',{class:'item-main'});info.appendChild(el('div',{class:'item-title'},title));info.appendChild(el('div',{class:'item-meta'},detail));row.appendChild(info);return row}
- function exportMonth(t){
+ function exportMonth(t,all=false){
   const m=$('elMonth').value||month();let headers,rows,filename;
-  if(t==='history'){headers=['Date opération','Produit','Type','Date départ','DLC','Lot','Initiales','Quantité','Mode'];rows=((typeof state!=='undefined'?state.history:[])).filter(h=>h.createdAt?.slice(0,7)===m).flatMap(h=>(h.items||[]).map(x=>[h.createdAt,x.product,x.type,x.date,x.dlc,x.lot,x.initials,x.qty,h.kind]));filename='Historique_'+m}
-  else if(t==='dlc'){headers=['Date enregistrement','Produit','DLC','Lot','Initiales','Étiquettes','Statut','Clôture'];rows=(window.ELDlcReminders?.getRecords?.()||[]).filter(x=>x.dlc?.slice(0,7)===m).map(x=>[x.createdAt,x.product,x.dlc,x.lot,x.initials,x.qty,x.status,x.closedAt||'']);filename='Suivi_DLC_'+m}
-  else{headers=['Date','Produit','Quantité','Unité','Motif','Lot','Initiales','Commentaire','Source'];rows=losses.filter(x=>x.date?.slice(0,7)===m).map(x=>[x.date,x.product,x.qty,x.unit,x.reason,x.lot,x.initials,x.comment,x.source||'Manuelle']);filename='Pertes_'+m}
-  const blob=makeXlsx([headers,...rows]);const a=el('a');a.href=URL.createObjectURL(blob);a.download=filename+'.xlsx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+  if(t==='history'){headers=['Date opération','Produit','Type','Date départ','DLC','Lot','Initiales','Quantité','Mode'];rows=((typeof state!=='undefined'?state.history:[])).filter(h=>all||h.createdAt?.slice(0,7)===m).flatMap(h=>(h.items||[]).map(x=>[h.createdAt,x.product,x.type,x.date,x.dlc,x.lot,x.initials,x.qty,h.kind]));filename='Historique_'+m}
+  else if(t==='dlc'){headers=['Date enregistrement','Produit','DLC','Lot','Initiales','Étiquettes','Statut','Clôture'];rows=(window.ELDlcReminders?.getRecords?.()||[]).filter(x=>all||x.dlc?.slice(0,7)===m).map(x=>[x.createdAt,x.product,x.dlc,x.lot,x.initials,x.qty,x.status,x.closedAt||'']);filename='Suivi_DLC_'+m}
+  else{headers=['Date','Produit','Quantité','Unité','Motif','Lot','Initiales','Commentaire','Source'];rows=losses.filter(x=>all||x.date?.slice(0,7)===m).map(x=>[x.date,x.product,x.qty,x.unit,x.reason,x.lot,x.initials,x.comment,x.source||'Manuelle']);filename='Pertes_'+m}
+  if(all)filename=filename.replace(m,'Global');const blob=makeXlsx([headers,...rows]);const a=el('a');a.href=URL.createObjectURL(blob);a.download=filename+'.xlsx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
  }
  render(tab);
  window.ELTracking={refresh,addLoss,getLosses:()=>losses.slice()};
