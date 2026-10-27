@@ -11,3 +11,6 @@
 
 /* Graphiques du tableau de bord, sans dépendance externe */
 .el-chart-days{display:flex;align-items:flex-end;gap:3px;height:125px;border-bottom:1px solid var(--line);padding:6px 0 0}.el-chart-bar-wrap{flex:1;min-width:0;height:100%;display:flex;align-items:flex-end}.el-chart-bar{width:100%;background:var(--burgundy);border-radius:4px 4px 0 0;min-height:2px}.el-chart-axis{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:5px}.el-chart-row{display:grid;grid-template-columns:minmax(85px,1fr) minmax(80px,2fr) 26px;gap:8px;align-items:center;margin:11px 0;font-size:12px}.el-chart-row span{overflow-wrap:anywhere}.el-chart-row strong{text-align:right}.el-chart-track{height:11px;background:var(--soft);border-radius:10px;overflow:hidden}.el-chart-fill{height:100%;background:var(--burgundy);border-radius:10px}
+
+/* Gestion massive de la base produits */
+.el-bulk-list{max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:12px}.el-bulk-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}.el-bulk-option:last-child{border-bottom:0}.el-bulk-option input{width:18px;height:18px;flex-shrink:0}.el-bulk-option span{flex:1;overflow-wrap:anywhere}.el-bulk-option small{color:var(--muted)}
