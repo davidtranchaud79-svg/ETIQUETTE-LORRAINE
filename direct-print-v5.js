@@ -229,10 +229,26 @@
         '<div class="button-row" style="margin-top:10px"><button id="scanNativePrinters" class="secondary-btn">Rechercher</button><button id="connectNativePrinter" class="primary-btn">Connecter</button><button id="testNativePrinter" class="secondary-btn">Test 60 × 30</button><button id="diagNativePrinter" class="secondary-btn">Diagnostic</button><button id="disconnectNativePrinter" class="secondary-btn">Déconnecter</button></div>'+
         '<small id="nativePrintStatus" class="muted-line">Aucune imprimante connectée.</small><pre id="nativePrintDiag" style="display:none;white-space:pre-wrap;word-break:break-word;margin-top:10px;font-size:10px;line-height:1.35;max-height:180px;overflow:auto"></pre>';
     }else{
-      card.innerHTML='<h3>Impression directe Bluetooth</h3><p>Le module direct est prêt, mais le navigateur/PWA ne peut pas utiliser le Bluetooth classique de la CLABEL.</p>'+
-        '<div class="printer-note">Pour obtenir <strong>Étiquette Lorraine → Imprimer → étiquette qui sort</strong>, il faut la version native Android/iOS. Le PDF reste disponible comme secours.</div>';
+      card.innerHTML='<h3>Impression directe Bluetooth</h3><p>Le module d’impression directe n’est pas détecté.</p>'+
+        '<div class="printer-note">Sur Android, ouvre l’application installée (et non le site Web). Si ce message apparaît dans l’application Android, utilise le diagnostic ci-dessous.</div>'+
+        '<button id="bridgeDiagnosticButton" class="secondary-btn" type="button" style="margin-top:10px">Diagnostic Android</button>'+
+        '<pre id="bridgeDiagnosticResult" style="white-space:pre-wrap;word-break:break-word;font-size:12px;margin-top:10px"></pre>';
     }
     printerCard.insertAdjacentElement('afterend',card);
+    if(!nativeAvailable()){
+      card.querySelector('#bridgeDiagnosticButton').addEventListener('click',function(){
+        const cap=window.Capacitor;
+        const info={
+          capacitorPresent:!!cap,
+          platform:typeof cap?.getPlatform==='function'?cap.getPlatform():'unknown',
+          nativePlatform:typeof cap?.isNativePlatform==='function'?cap.isNativePlatform():'unavailable',
+          registerPluginAvailable:typeof cap?.registerPlugin==='function',
+          clabelPluginPresent:!!cap?.Plugins?.ClabelPrinter,
+          nativeAvailable:nativeAvailable()
+        };
+        card.querySelector('#bridgeDiagnosticResult').textContent=JSON.stringify(info,null,2);
+      });
+    }
     if(nativeAvailable()){
       card.querySelector('#scanNativePrinters').addEventListener('click',scanUI);
       card.querySelector('#connectNativePrinter').addEventListener('click',connectUI);
