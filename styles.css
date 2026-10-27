@@ -5,3 +5,6 @@
 
 /* Navigation 6 onglets et synthèse mensuelle */
 .bottom-nav{grid-template-columns:repeat(6,minmax(0,1fr))}.bottom-nav .nav-btn{font-size:9px;min-width:0}.el-dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:13px 0}.el-dash-stat{border:1px solid var(--line);border-radius:13px;padding:12px;background:#faf9f7;display:flex;flex-direction:column;gap:5px}.el-dash-stat span{font-size:12px;font-weight:750}.el-dash-stat strong{font-size:29px;color:var(--burgundy);line-height:1.1}.el-dash-stat small{font-size:10px;color:var(--muted)}.el-dash-links{margin:12px 0}.el-dash-links button{flex:1}#historyList[hidden]{display:none!important}#elDashDlc .card{margin-bottom:12px}@media(max-width:380px){.bottom-nav .nav-btn{font-size:8px}.bottom-nav .nav-btn span{font-size:16px}}
+
+/* Pilotage des pertes en direct */
+.el-dash-rank{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}.el-dash-rank:last-child{border-bottom:0}.el-dash-rank span{font-size:13px;min-width:0;overflow-wrap:anywhere}.el-dash-rank span small{display:block;font-size:10px;color:var(--muted);margin-top:4px}.el-dash-rank strong{font-size:12px;text-align:right;white-space:nowrap}.el-dash-stat strong{overflow-wrap:anywhere}
