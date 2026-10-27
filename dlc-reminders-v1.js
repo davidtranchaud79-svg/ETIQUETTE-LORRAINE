@@ -39,9 +39,20 @@
       if(!b)return;
       const r=records.find(x=>x.id===b.dataset.dlcId);
       if(!r||r.status!=='active')return;
+      if(b.dataset.action==='discarded'){
+        const raw=prompt('Quantité réellement jetée (en unité physique, pas en nombre d’étiquettes) :','1');
+        if(raw===null)return;
+        const qty=Number(raw.replace(',','.'));
+        if(!Number.isFinite(qty)||qty<=0)return alert('Quantité invalide');
+        const unit=prompt('Unité (kg, g, pièce, L, mL, portion) :','pièce');
+        if(unit===null)return;
+        const allowed=['kg','g','pièce','L','mL','portion'];
+        if(!allowed.includes(unit.trim()))return alert('Unité non reconnue');
+        if(!window.ELTracking?.addLoss?.({source:'DLC',sourceId:r.id,date:today(),product:r.product,qty,unit:unit.trim(),reason:'DLC dépassée',lot:r.lot||'',initials:(document.getElementById('initials')?.value||r.initials||'').trim().toUpperCase(),comment:'Clôture du suivi DLC '+r.dlc}))return alert('Perte déjà enregistrée ou module indisponible');
+      }
       r.status=b.dataset.action==='used'?'used':'discarded';
       r.closedAt=new Date().toISOString();
-      save();render();
+      save();render();window.ELTracking?.refresh?.();
     });
   }
   function render(){
