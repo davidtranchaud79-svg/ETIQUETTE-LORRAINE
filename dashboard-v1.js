@@ -7,7 +7,7 @@ const today=()=>{const d=new Date();return month()+'-'+String(d.getDate()).padSt
 function init(){
  const box=by('elDashboard'),history=document.querySelector('[data-view="history"]'),lossMount=by('elLossesMount');
  if(!box||!history||!lossMount)return;
- box.innerHTML='<div class="card settings-card"><label class="field-label" for="elDashMonth">Mois à consulter</label><input id="elDashMonth" class="input" type="month"/><div class="el-dash-grid" id="elDashStats"></div><p class="muted-line">Impressions = envois enregistrés, sans confirmation de sortie physique. Les PDF sont comptabilisés séparément.</p></div><div id="elDashLossDetails"></div><div id="elDashDlc"></div><div class="button-row el-dash-links"><button class="secondary-btn" id="elDashHistory">Voir l’historique</button><button class="secondary-btn" id="elDashLosses">Voir les pertes</button></div>';
+ box.innerHTML='<div class="card settings-card"><label class="field-label" for="elDashMonth">Mois à consulter</label><input id="elDashMonth" class="input" type="month"/><div class="el-dash-grid" id="elDashStats"></div><p class="muted-line">Impressions = envois enregistrés, sans confirmation de sortie physique. Les PDF sont comptabilisés séparément.</p></div><div id="elDashCharts"></div><div id="elDashLossDetails"></div><div id="elDashDlc"></div><div class="button-row el-dash-links"><button class="secondary-btn" id="elDashHistory">Voir l’historique</button><button class="secondary-btn" id="elDashLosses">Voir les pertes</button></div>';
  by('elDashMonth').value=month();
  const tracking=by('elTracking'),reminders=by('elDlcReminderCard');
  if(reminders)by('elDashDlc').appendChild(reminders);
@@ -59,6 +59,15 @@ function init(){
   const esc=v=>String(v).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
   const list=(title,items)=>'<div class="card settings-card"><h3>'+title+'</h3>'+(items.length?items.map(([name,n])=>'<div class="el-dash-rank"><span>'+esc(name)+'</span><strong>'+n+' saisie(s)</strong></div>').join(''):'<p>Aucune perte enregistrée sur ce mois.</p>')+'</div>';
   const recent=losses.slice().sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''))).slice(0,8);
+  const chartBox=by('elDashCharts');
+  const days=new Date(Number(m.slice(0,4)),Number(m.slice(5,7)),0).getDate();
+  const daily=Array.from({length:days},(_,i)=>losses.filter(r=>Number(r.date?.slice(8,10))===i+1).length);
+  const maxDay=Math.max(1,...daily);
+  const bars=daily.map((n,i)=>'<div class="el-chart-bar-wrap" title="'+(i+1)+'/'+m+' : '+n+' perte(s)"><div class="el-chart-bar" style="height:'+Math.max(n?5:2,n/maxDay*100)+'%"></div></div>').join('');
+  const reasonData=group('reason'),maxReason=Math.max(1,...reasonData.map(x=>x[1]));
+  const reasonBars=reasonData.map(([name,n])=>'<div class="el-chart-row"><span>'+esc(name)+'</span><div class="el-chart-track"><div class="el-chart-fill" style="width:'+(n/maxReason*100)+'%"></div></div><strong>'+n+'</strong></div>').join('');
+  const dayLabels='<div class="el-chart-axis"><span>1</span><span>'+Math.ceil(days/2)+'</span><span>'+days+'</span></div>';
+  chartBox.innerHTML='<div class="card settings-card"><h3>Évolution quotidienne des pertes</h3><p class="muted-line">Nombre de saisies par jour · '+esc(m)+'</p><div class="el-chart-days" role="img" aria-label="Pertes quotidiennes : '+daily.join(', ')+'">'+bars+'</div>'+dayLabels+'</div><div class="card settings-card"><h3>Répartition par motif</h3><p class="muted-line">Nombre de pertes enregistrées</p>'+(reasonBars||'<p>Aucune perte enregistrée.</p>')+'</div>';
   by('elDashLossDetails').innerHTML='<div class="card settings-card"><h3>Dernières pertes saisies</h3><p class="muted-line">Mise à jour automatique sur cette tablette</p>'+(recent.length?recent.map(x=>'<div class="el-dash-rank"><span>'+esc(x.product)+'<small>'+esc(x.date)+' · '+esc(x.reason)+'</small></span><strong>'+esc(x.qty)+' '+esc(x.unit)+'</strong></div>').join(''):'<p>Aucune perte ce mois.</p>')+'</div>'+list('Produits les plus jetés',group('product'))+list('Motifs des pertes',group('reason'));
   window.ELDlcReminders?.render?.();
  }
