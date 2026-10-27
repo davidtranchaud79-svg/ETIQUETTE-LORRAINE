@@ -18,6 +18,7 @@ const files = [
   'platform-v4.js',
   'printer-v4.js',
   'direct-print-v5.js',
+  'dlc-reminders-v1.js',
   'sw.js'
 ];
 
