@@ -44,7 +44,7 @@ function init(){
   card.querySelectorAll('[data-tab]').forEach(b=>{b.classList.toggle('primary-btn',b.dataset.tab===t);b.classList.toggle('secondary-btn',b.dataset.tab!==t)});
   $('elLossForm').hidden=t!=='losses';const m=$('elMonth').value||month(),box=$('elTrackingContent');box.innerHTML='';
   if(t==='history'){
-   const hs=(window.state?.history||globalThis.state?.history||[]).filter(x=>x.createdAt?.slice(0,7)===m);
+   const hs=((typeof state!=='undefined'?state.history:[])).filter(x=>x.createdAt?.slice(0,7)===m);
    const rows=hs.flatMap(h=>(h.items||[]).map(x=>({...x,createdAt:h.createdAt,kind:h.kind})));
    $('elTrackingSummary').textContent=rows.length+' ligne(s) · '+rows.reduce((n,x)=>n+(Number(x.qty)||0),0)+' étiquette(s)';
    rows.forEach(x=>box.appendChild(item(x.product,x.createdAt+' · '+x.type+' · DLC '+(x.dlc||'—')+' · Lot '+(x.lot||'—')+' · ×'+x.qty)));
@@ -56,14 +56,14 @@ function init(){
    const rs=losses.filter(x=>x.date?.slice(0,7)===m).sort((a,b)=>b.date.localeCompare(a.date));
    $('elTrackingSummary').textContent=rs.length+' perte(s) enregistrée(s) · quantités détaillées par unité';
    rs.forEach(x=>{const row=item(x.product,x.date+' · '+x.qty+' '+x.unit+' · '+x.reason+' · '+(x.initials||'—'));const btn=el('button',{type:'button',class:'mini-btn danger','data-remove-loss':x.id},'Supprimer');row.appendChild(btn);box.appendChild(row)});
-   $('elLossProducts').innerHTML=(window.state?.products||globalThis.state?.products||[]).filter(x=>!x.deleted).map(x=>'<option value="'+safe(x.name)+'"></option>').join('');
+   $('elLossProducts').innerHTML=((typeof state!=='undefined'?state.products:[])).filter(x=>!x.deleted).map(x=>'<option value="'+safe(x.name)+'"></option>').join('');
   }
   if(!box.children.length)box.appendChild(el('p',{},'Aucune donnée pour ce mois.'));
  }
  function item(title,detail){const row=el('div',{class:'history-item'}),info=el('div',{class:'item-main'});info.appendChild(el('div',{class:'item-title'},title));info.appendChild(el('div',{class:'item-meta'},detail));row.appendChild(info);return row}
  function exportMonth(t){
   const m=$('elMonth').value||month();let headers,rows,filename;
-  if(t==='history'){headers=['Date impression','Produit','Type','Date départ','DLC','Lot','Initiales','Quantité','Mode'];rows=(globalThis.state?.history||[]).filter(h=>h.createdAt?.slice(0,7)===m).flatMap(h=>(h.items||[]).map(x=>[h.createdAt,x.product,x.type,x.date,x.dlc,x.lot,x.initials,x.qty,h.kind]));filename='Historique_'+m}
+  if(t==='history'){headers=['Date impression','Produit','Type','Date départ','DLC','Lot','Initiales','Quantité','Mode'];rows=((typeof state!=='undefined'?state.history:[])).filter(h=>h.createdAt?.slice(0,7)===m).flatMap(h=>(h.items||[]).map(x=>[h.createdAt,x.product,x.type,x.date,x.dlc,x.lot,x.initials,x.qty,h.kind]));filename='Historique_'+m}
   else if(t==='dlc'){headers=['Date enregistrement','Produit','DLC','Lot','Initiales','Étiquettes','Statut','Clôture'];rows=(window.ELDlcReminders?.getRecords?.()||[]).filter(x=>x.dlc?.slice(0,7)===m).map(x=>[x.createdAt,x.product,x.dlc,x.lot,x.initials,x.qty,x.status,x.closedAt||'']);filename='Suivi_DLC_'+m}
   else{headers=['Date','Produit','Quantité','Unité','Motif','Lot','Initiales','Commentaire','Source'];rows=losses.filter(x=>x.date?.slice(0,7)===m).map(x=>[x.date,x.product,x.qty,x.unit,x.reason,x.lot,x.initials,x.comment,x.source||'Manuelle']);filename='Pertes_'+m}
   const blob=makeXlsx([headers,...rows]);const a=el('a');a.href=URL.createObjectURL(blob);a.download=filename+'.xlsx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
