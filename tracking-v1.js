@@ -8,7 +8,7 @@ const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'
 const iso=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const month=()=>iso().slice(0,7);
 const id=()=>crypto.randomUUID?.()||Date.now()+'-'+Math.random();
-function save(){localStorage.setItem(KEY,JSON.stringify(losses))}
+function save(){localStorage.setItem(KEY,JSON.stringify(losses));window.dispatchEvent(new CustomEvent('el:losses-changed',{detail:{count:losses.length}}))}
 function load(){try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');losses=Array.isArray(v)?v:[]}catch(_){losses=[]}}
 function el(name,attrs={},text=''){const x=document.createElement(name);for(const [k,v] of Object.entries(attrs))x.setAttribute(k,v);x.textContent=text;return x}
 function init(){
@@ -70,6 +70,7 @@ function init(){
  }
  render(tab);
  window.ELTracking={refresh,addLoss,getLosses:()=>losses.slice()};
+ window.dispatchEvent(new Event('el:losses-changed'));
 }
 function addLoss(data){if(data.sourceId&&losses.some(x=>x.sourceId===data.sourceId))return false;losses.unshift({id:id(),createdAt:new Date().toISOString(),...data});save();window.ELTracking?.refresh?.();return true}
 // Minimal Excel OOXML workbook, stored ZIP entries, fully offline.
