@@ -336,7 +336,7 @@
     const x=currentItem();if(x.error)return toast(x.error);
     const labels=expanded([x]),btn=document.getElementById('directNativePrintBtn');
     try{
-      if(btn){btn.disabled=true;btn.textContent='Impression…'}await printLabelsDirect(labels);await recordHistory([x],labels.length,'Bluetooth direct');
+      if(btn){btn.disabled=true;btn.textContent='Impression…'}await printLabelsDirect(labels);await recordHistory([x],labels.length,'Bluetooth direct');await window.ELDlcReminders?.track?.([x],'Bluetooth');
       toast(labels.length+' étiquette'+(labels.length>1?'s':'')+' envoyée'+(labels.length>1?'s':''));
     }catch(e){console.error(e);toast('Impression directe impossible — utilise le PDF de secours')}
     finally{if(btn){btn.disabled=false;btn.textContent='Imprimer directement en Bluetooth'}}
