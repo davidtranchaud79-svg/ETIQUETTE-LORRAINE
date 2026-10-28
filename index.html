@@ -88,6 +88,29 @@
       <div class="sticky-actions"><button id="printBatchBtn" class="primary-btn full" disabled>Envoyer le lot vers Print Master</button><button id="savePdfBtn" class="secondary-btn full" disabled>Enregistrer une copie du lot</button></div>
     </section>
 
+    <section class="view" data-view="inventory">
+      <div class="section-heading top"><div><h2>Inventaire mensuel</h2><p>Import Excel, comptage et export · disponible hors connexion.</p></div></div>
+      <div class="card settings-card">
+        <label class="field-label" for="elInvMonth">Mois d’inventaire</label><input id="elInvMonth" class="input" type="month" />
+        <div class="button-row" style="margin-top:12px"><label class="secondary-btn file-btn">Importer la base Excel / CSV<input type="file" id="elInvImport" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label><button type="button" class="secondary-btn" id="elInvCopy">Reprendre la base du mois précédent</button></div>
+        <div class="button-row"><button type="button" class="secondary-btn" id="elInvTemplate">Modèle CSV pour Excel</button><button type="button" class="primary-btn" id="elInvExport">Exporter l’inventaire Excel</button></div>
+        <p id="elInvStatus" class="muted-line" role="status" aria-live="polite"></p>
+      </div>
+      <div class="card settings-card">
+        <h3>Comptage des produits</h3><p id="elInvStats" class="muted-line"></p>
+        <label class="field-label" for="elInvSearch">Rechercher un produit, une référence ou une catégorie</label>
+        <input id="elInvSearch" class="input" type="search" autocomplete="off" placeholder="Ex. saumon, crème, P001…" />
+        <div id="elInvList" class="el-inv-list"></div>
+      </div>
+      <div class="card settings-card" id="elInvEditor" hidden>
+        <h3 id="elInvProduct"></h3><p id="elInvDetails" class="muted-line"></p>
+        <p>Quantité comptée : <strong id="elInvCount"></strong></p>
+        <label class="field-label" for="elInvQty">Quantité à saisir</label><input id="elInvQty" class="input" type="number" min="0" step="any" inputmode="decimal" placeholder="Ex. 2,5" />
+        <div class="button-row"><button type="button" class="primary-btn" id="elInvAdd">+ Ajouter à la quantité</button><button type="button" class="secondary-btn" id="elInvSet">Corriger le total</button></div>
+        <p class="muted-line">Ajouter cumule les quantités. Corriger remplace le total compté.</p><pre id="elInvHistory" class="el-inv-history"></pre>
+      </div>
+    </section>
+
     <section class="view" data-view="products">
       <div class="section-heading top"><div><h2>Base produits</h2><p>Règles PMS stockées localement.</p></div><button class="primary-btn compact" id="newProductBtn">+ Produit</button></div>
       <div class="card compact-card"><input id="productFilter" class="input" type="search" placeholder="Rechercher un produit ou une catégorie…" /></div>
@@ -175,6 +198,7 @@
     <button class="nav-btn" data-target="history"><span>🕘</span>Historique</button>
     <button class="nav-btn" data-target="losses"><span>📉</span>Pertes</button>
     <button class="nav-btn" data-target="products"><span>📦</span>Produits</button>
+    <button class="nav-btn" data-target="inventory"><span>📋</span>Inventaire</button>
     <button class="nav-btn" data-target="settings"><span>⚙️</span>Réglages</button>
   </nav>
 </div>
