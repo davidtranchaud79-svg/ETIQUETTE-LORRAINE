@@ -94,5 +94,6 @@ function makeXlsx(rows){
  for(const [name,content] of files){const n=utf(name),b=utf(content),sum=crc(b),local=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(sum),...u32(b.length),...u32(b.length),...u16(n.length),...u16(0),...n]);chunks.push(local,b);directory.push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(sum),...u32(b.length),...u32(b.length),...u16(n.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(offset),...n]));offset+=local.length+b.length}
  const size=directory.reduce((n,b)=>n+b.length,0);chunks.push(...directory,new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(size),...u32(offset),...u16(0)]));return new Blob(chunks,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 }
+window.ELTrackingMakeXlsx=makeXlsx;
 window.ELTrackingInit=init;
 })();
