@@ -72,7 +72,7 @@ function init(){
   if(all)filename=filename.replace(m,'Global');const blob=makeXlsx([headers,...rows]);const a=el('a');a.href=URL.createObjectURL(blob);a.download=filename+'.xlsx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
  }
  render(tab);
- window.ELTracking={refresh,addLoss,getLosses:()=>losses.slice()};
+ window.ELTracking={refresh,addLoss,getLosses:()=>losses.slice(),makeXlsx};
  window.dispatchEvent(new Event('el:losses-changed'));
 }
 function addLoss(data){if(data.sourceId&&losses.some(x=>x.sourceId===data.sourceId))return false;losses.unshift({id:id(),createdAt:new Date().toISOString(),...data});save();window.ELTracking?.refresh?.();return true}
