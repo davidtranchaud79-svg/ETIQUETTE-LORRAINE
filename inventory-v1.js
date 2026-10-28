@@ -20,7 +20,7 @@ function csv(rows){return '\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replac
 const headers=['Code','Produit','Catégorie','Unité','Quantité théorique','Quantité comptée','Écart','Dernière saisie'];
 function exportData(){
  const rows=[headers,...entries().map(r=>[r.code||'',r.name,r.category||'',r.unit||'',r.expected??'',r.counted??0,r.expected===null?'':Number(r.counted||0)-r.expected,r.updatedAt||''])];
- if(window.ELTracking?.makeXlsx)download(window.ELTracking.makeXlsx(rows),'Inventaire_'+month+'.xlsx');
+ if(window.ELTrackingMakeXlsx)download(window.ELTrackingMakeXlsx(rows),'Inventaire_'+month+'.xlsx');
  else download(new Blob([csv(rows)],{type:'text/csv;charset=utf-8'}),'Inventaire_'+month+'.csv');
 }
 function template(){
