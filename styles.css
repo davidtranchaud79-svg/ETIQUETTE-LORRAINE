@@ -14,3 +14,6 @@
 
 /* Gestion massive de la base produits */
 .el-bulk-list{max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:12px}.el-bulk-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}.el-bulk-option:last-child{border-bottom:0}.el-bulk-option input{width:18px;height:18px;flex-shrink:0}.el-bulk-option span{flex:1;overflow-wrap:anywhere}.el-bulk-option small{color:var(--muted)}
+
+/* Inventaire mensuel */
+.el-inv-list{max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:12px}.el-inv-product{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);padding:12px;color:inherit;cursor:pointer}.el-inv-product:last-child{border-bottom:0}.el-inv-product.selected{background:var(--soft)}.el-inv-product span:first-child{flex:1;min-width:0}.el-inv-product strong{display:block;font-size:14px;overflow-wrap:anywhere}.el-inv-product small{display:block;color:var(--muted);font-size:11px;margin-top:4px}.el-inv-count{text-align:right;white-space:nowrap;font-size:13px;font-weight:700}.el-inv-history{font-size:11px;line-height:1.5;white-space:pre-wrap;color:var(--muted);font-family:inherit}
