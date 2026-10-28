@@ -36,7 +36,7 @@ async function scheduleNotifications(){
   }
   // Android limite le nombre de notifications programmées. Priorité aux prochaines échéances.
   const selected=[...groups.values()].sort((a,b)=>a.iso.localeCompare(b.iso)||a.kind.localeCompare(b.kind)).slice(0,60);
-  const notifications=selected.map((g,i)=>({id:NOTICE_PREFIX+i,title:g.kind==='tomorrow'?'Étiquette Lorraine · DLC demain':'Étiquette Lorraine · DLC aujourd’hui',body:g.items.length+' lot(s) à contrôler'+(g.items.length===1?' : '+g.items[0].product:''),schedule:{at:dateAt(g.iso)},smallIcon:'ic_stat_icon',extra:{target:'dashboard',date:g.iso}}));
+  const notifications=selected.map((g,i)=>({id:NOTICE_PREFIX+i,title:g.kind==='tomorrow'?'Étiquette Lorraine · DLC demain':'Étiquette Lorraine · DLC aujourd’hui',body:g.items.length+' lot(s) à contrôler'+(g.items.length===1?' : '+g.items[0].product:''),schedule:{at:dateAt(g.iso)},extra:{target:'dashboard',date:g.iso}}));
   if(notifications.length)await plugin.schedule({notifications});
   notifyStatus('Notifications Android activées · '+notifications.length+' rappel(s) programmés à 8 h.');
  }catch(err){console.error('Notifications DLC',err);notifyStatus('Programmation des notifications impossible : '+(err.message||err))}
