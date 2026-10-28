@@ -54,7 +54,7 @@ function init(){
   }else if(t==='dlc'){
    const rs=window.ELDlcReminders?.getRecords?.().filter(x=>x.dlc?.slice(0,7)===m)||[];
    $('elTrackingSummary').textContent=rs.length+' lot(s) avec DLC ce mois';
-   rs.forEach(x=>box.appendChild(item(x.product,'DLC '+x.dlc+' · '+(x.status==='active'?'À contrôler':x.status==='used'?'Utilisé':'Jeté')+' · Lot '+(x.lot||'—'))));
+   rs.forEach(x=>box.appendChild(item(x.product,'DLC '+x.dlc+' · '+(x.status==='active'?'À contrôler':x.status==='pending_loss'?'Perte à valider':x.status==='used'?'Utilisé':'Perte validée')+' · Lot '+(x.lot||'—'))));
   }else{
    const rs=losses.filter(x=>x.date?.slice(0,7)===m).sort((a,b)=>b.date.localeCompare(a.date));
    $('elTrackingSummary').textContent=rs.length+' perte(s) enregistrée(s) · quantités détaillées par unité';
