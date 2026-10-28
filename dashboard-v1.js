@@ -33,6 +33,9 @@ function init(){
   const count=rows=>rows.reduce((sum,h)=>sum+(Number(h.count)||0),0);
   const records=window.ELDlcReminders?.getRecords?.()||[];
   const active=records.filter(r=>r.status==='active');
+  const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);const tomorrowIso=[tomorrow.getFullYear(),String(tomorrow.getMonth()+1).padStart(2,'0'),String(tomorrow.getDate()).padStart(2,'0')].join('-');
+  const soon=active.filter(r=>r.dlc===tomorrowIso);
+  const pending=records.filter(r=>r.status==='pending_loss');
   const due=active.filter(r=>r.dlc===today());
   const overdue=active.filter(r=>r.dlc<today());
   const losses=window.ELTracking?.getLosses?.().filter(r=>r.date?.slice(0,7)===m)||[];
@@ -44,7 +47,9 @@ function init(){
   const stats=[
    ['Étiquettes envoyées',count(bt),'Bluetooth'],
    ['PDF générés',count(pdf),'Sans confirmation d’impression'],
+   ['DLC demain',soon.length,'Rappel J-1'],
    ['DLC aujourd’hui',due.length,'Lots à contrôler'],
+   ['Pertes à valider',pending.length,'Non comptabilisées'],
    ['DLC dépassées',overdue.length,'Lots à traiter'],
    ['Pertes du mois',losses.length,'Enregistrements'],
    ['Pertes aujourd’hui',todayLoss.length,'Saisies du jour'],
@@ -73,6 +78,7 @@ function init(){
  }
  by('elDashMonth').addEventListener('change',refresh);
  window.addEventListener('el:losses-changed',refresh);
+ window.addEventListener('el:dlc-changed',refresh);
  window.addEventListener('focus',refresh);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
  document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>{
