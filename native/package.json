@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "prepare": "node prepare-native.mjs",
+    "android:launcher": "node ensure-launcher.mjs",
+    "android:build": "npm run prepare && npx cap sync android && npm run android:launcher && cd android && ./gradlew assembleDebug",
     "android:add": "npm run prepare && npx cap add android",
     "ios:add": "npm run prepare && npx cap add ios",
     "sync": "npm run prepare && npx cap sync",
