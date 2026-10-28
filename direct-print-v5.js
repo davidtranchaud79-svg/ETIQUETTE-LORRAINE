@@ -245,6 +245,7 @@
       card.querySelector('#disconnectNativePrinter').addEventListener('click',disconnectUI);
       restoreNativeSelection();
       addDirectPrintButton();
+      addDirectBatchButton();
     }
   }
 
@@ -254,6 +255,49 @@
     const b=document.createElement('button');b.id='directNativePrintBtn';b.className='primary-btn full big-action';b.style.marginBottom='8px';
     b.textContent='Imprimer directement en Bluetooth';b.disabled=true;b.addEventListener('click',printCurrentDirect);
     pdfBtn.insertAdjacentElement('beforebegin',b);pdfBtn.textContent='Créer le PDF de secours';
+  }
+
+  function addDirectBatchButton(){
+    if(document.getElementById('directNativeBatchBtn'))return;
+    const pdfBtn=document.getElementById('printBatchBtn');if(!pdfBtn)return;
+    const b=document.createElement('button');
+    b.id='directNativeBatchBtn';b.type='button';b.className='primary-btn full big-action';
+    b.style.marginBottom='8px';b.textContent='Imprimer le lot directement en Bluetooth';
+    b.disabled=true;
+    b.addEventListener('click',printBatchDirect);
+    pdfBtn.insertAdjacentElement('beforebegin',b);
+    const update=()=>{if(!b.dataset.busy)b.disabled=!printerConnected||!state.batch?.length};
+    const list=document.getElementById('batchList');
+    if(list)new MutationObserver(update).observe(list,{childList:true,subtree:true});
+    update();
+  }
+  let printerConnected=false;
+  function updateDirectButtons(connected){
+    printerConnected=connected;
+    const single=document.getElementById('directNativePrintBtn');
+    if(single&&!single.dataset.busy)single.disabled=!connected;
+    const batch=document.getElementById('directNativeBatchBtn');
+    if(batch&&!batch.dataset.busy)batch.disabled=!connected||!state.batch?.length;
+  }
+  async function printBatchDirect(){
+    if(!state.batch?.length)return toast('Ajoute des produits au lot avant de lancer l’impression');
+    if(!printerConnected)return toast('Connecte d’abord l’imprimante CLABEL dans les réglages');
+    const btn=document.getElementById('directNativeBatchBtn');
+    const items=state.batch.map(x=>({...x}));
+    const labels=expanded(items);
+    try{
+      if(btn){btn.dataset.busy='1';btn.disabled=true;btn.textContent='Impression du lot en cours…'}
+      await printLabelsDirect(labels);
+      await recordHistory(items,labels.length,'Lot Bluetooth direct');
+      await window.ELDlcReminders?.track?.(items,'Bluetooth');
+      toast(labels.length+' étiquette(s) du lot envoyée(s) en Bluetooth');
+    }catch(e){
+      console.error('Impression lot Bluetooth',e);
+      toast('Échec du lot Bluetooth : '+(e.message||'vérifie la connexion'));
+    }finally{
+      if(btn){delete btn.dataset.busy;btn.textContent='Imprimer le lot directement en Bluetooth'}
+      updateDirectButtons(printerConnected);
+    }
   }
 
   async function restoreNativeSelection(){
@@ -283,7 +327,7 @@
     try{
       await connectPrinter(d.address,d.transport);localStorage.setItem('el.nativePrinterAddress',d.address);localStorage.setItem('el.nativePrinterName',d.name||'CLABEL');
       if(status)status.textContent='Connectée : '+(d.name||d.address);
-      const btn=document.getElementById('directNativePrintBtn');if(btn)btn.disabled=false;toast('Imprimante CLABEL connectée');
+      updateDirectButtons(true);toast('Imprimante CLABEL connectée');
     }catch(e){if(status)status.textContent='Connexion impossible : '+e.message;toast('Connexion imprimante impossible')}
   }
   async function testUI(){
@@ -318,7 +362,7 @@
 
   async function disconnectUI(){
     await disconnectPrinter();const status=document.getElementById('nativePrintStatus');if(status)status.textContent='Imprimante déconnectée.';
-    const btn=document.getElementById('directNativePrintBtn');if(btn)btn.disabled=true;
+    updateDirectButtons(false);
   }
   async function printCurrentDirect(){
     const x=currentItem();if(x.error)return toast(x.error);
