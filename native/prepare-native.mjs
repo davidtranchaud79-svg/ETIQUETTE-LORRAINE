@@ -20,7 +20,7 @@ const files = [
   'direct-print-v5.js',
   'dlc-reminders-v1.js',
   'tracking-v1.js',
-  'dashboard-v1.js', 'bulk-products-v1.js',
+  'dashboard-v1.js', 'bulk-products-v1.js', 'inventory-v1.js',
   'sw.js'
 ];
 
