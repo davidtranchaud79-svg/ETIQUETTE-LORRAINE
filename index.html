@@ -92,7 +92,7 @@
       <div class="section-heading top"><div><h2>Inventaire mensuel</h2><p>Import Excel, comptage et export · disponible hors connexion.</p></div></div>
       <div class="card settings-card">
         <label class="field-label" for="elInvMonth">Mois d’inventaire</label><input id="elInvMonth" class="input" type="month" />
-        <div class="button-row" style="margin-top:12px"><label class="secondary-btn file-btn">Importer la base Excel / CSV<input type="file" id="elInvImport" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label><button type="button" class="secondary-btn" id="elInvCopy">Reprendre la base du mois précédent</button></div>
+        <div class="button-row" style="margin-top:12px"><button type="button" class="secondary-btn" id="elInvChooseFile">Choisir un fichier Excel / CSV</button><input type="file" id="elInvImport" class="el-inv-file-input" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Importer le fichier inventaire Excel ou CSV" /><button type="button" class="secondary-btn" id="elInvCopy">Reprendre la base du mois précédent</button></div>
         <div class="button-row"><button type="button" class="secondary-btn" id="elInvTemplate">Modèle CSV pour Excel</button><button type="button" class="primary-btn" id="elInvExport">Exporter l’inventaire Excel</button></div>
         <p id="elInvStatus" class="muted-line" role="status" aria-live="polite"></p>
       </div>
