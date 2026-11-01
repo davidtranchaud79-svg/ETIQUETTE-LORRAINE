@@ -64,12 +64,17 @@ function init(){
   if(!box.children.length)box.appendChild(el('p',{},'Aucune donnée pour ce mois.'));
  }
  function item(title,detail){const row=el('div',{class:'history-item'}),info=el('div',{class:'item-main'});info.appendChild(el('div',{class:'item-title'},title));info.appendChild(el('div',{class:'item-meta'},detail));row.appendChild(info);return row}
- function exportMonth(t,all=false){
+ async function exportMonth(t,all=false){
   const m=$('elMonth').value||month();let headers,rows,filename;
   if(t==='history'){headers=['Date opération','Produit','Type','Date départ','DLC','Lot','Initiales','Quantité','Mode'];rows=((typeof state!=='undefined'?state.history:[])).filter(h=>all||h.createdAt?.slice(0,7)===m).flatMap(h=>(h.items||[]).map(x=>[h.createdAt,x.product,x.type,x.date,x.dlc,x.lot,x.initials,x.qty,h.kind]));filename='Historique_'+m}
   else if(t==='dlc'){headers=['Date enregistrement','Produit','DLC','Lot','Initiales','Étiquettes','Statut','Clôture'];rows=(window.ELDlcReminders?.getRecords?.()||[]).filter(x=>all||x.dlc?.slice(0,7)===m).map(x=>[x.createdAt,x.product,x.dlc,x.lot,x.initials,x.qty,x.status,x.closedAt||'']);filename='Suivi_DLC_'+m}
   else{headers=['Date','Produit','Quantité','Unité','Motif','Lot','Initiales','Commentaire','Source'];rows=losses.filter(x=>all||x.date?.slice(0,7)===m).map(x=>[x.date,x.product,x.qty,x.unit,x.reason,x.lot,x.initials,x.comment,x.source||'Manuelle']);filename='Pertes_'+m}
-  if(all)filename=filename.replace(m,'Global');const blob=makeXlsx([headers,...rows]);const a=el('a');a.href=URL.createObjectURL(blob);a.download=filename+'.xlsx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+  if(all)filename=filename.replace(m,'Global');
+  try{
+   const blob=makeXlsx([headers,...rows]);
+   if(window.ELNativeSaveFile)await window.ELNativeSaveFile(blob,filename+'.xlsx');
+   else{const a=el('a');a.href=URL.createObjectURL(blob);a.download=filename+'.xlsx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},10000)}
+  }catch(err){console.error('Export suivi',err);alert('Export Excel impossible : '+(err.message||err))}
  }
  render(tab);
  window.ELTracking={refresh,addLoss,getLosses:()=>losses.slice(),makeXlsx};
