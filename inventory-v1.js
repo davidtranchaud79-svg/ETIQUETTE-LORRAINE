@@ -15,17 +15,38 @@ function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||'{}');db=d&&ty
 function entries(){return db.months[month]||[]}
 function cleanName(s){return String(s??'').trim().replace(/\s+/g,' ')}
 function id(){return globalThis.crypto?.randomUUID?.()||Date.now()+'-'+Math.random()}
-function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
+function browserDownload(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},10000)}
+async function saveFile(blob,name){
+ const filesystem=window.Capacitor?.Plugins?.Filesystem,share=window.Capacitor?.Plugins?.Share;
+ if(filesystem&&share){
+  const bytes=new Uint8Array(await blob.arrayBuffer());let binary='';
+  for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
+  const base64=btoa(binary);
+  const result=await filesystem.writeFile({path:name,data:base64,directory:'CACHE',recursive:true});
+  await share.share({title:'Inventaire Étiquette Lorraine',text:'Fichier '+name,url:result.uri,dialogTitle:'Enregistrer ou partager le fichier Excel'});
+  return;
+ }
+ browserDownload(blob,name);
+}
 function csv(rows){return '\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n')}
 const headers=['Code','Produit','Catégorie','Unité','Quantité théorique','Quantité comptée','Écart','Dernière saisie'];
-function exportData(){
- const rows=[headers,...entries().map(r=>[r.code||'',r.name,r.category||'',r.unit||'',r.expected??'',r.counted??0,r.expected===null?'':Number(r.counted||0)-r.expected,r.updatedAt||''])];
- if(window.ELTrackingMakeXlsx)download(window.ELTrackingMakeXlsx(rows),'Inventaire_'+month+'.xlsx');
- else download(new Blob([csv(rows)],{type:'text/csv;charset=utf-8'}),'Inventaire_'+month+'.csv');
+async function exportData(){
+ try{
+  const rows=[headers,...entries().map(r=>[r.code||'',r.name,r.category||'',r.unit||'',r.expected??'',r.counted??0,r.expected===null?'':Number(r.counted||0)-r.expected,r.updatedAt||''])];
+  const isXlsx=typeof window.ELTrackingMakeXlsx==='function';
+  const blob=isXlsx?window.ELTrackingMakeXlsx(rows):new Blob([csv(rows)],{type:'text/csv;charset=utf-8'});
+  const name='Inventaire_'+month+(isXlsx?'.xlsx':'.csv');
+  $('elInvStatus').textContent='Préparation de '+name+'…';
+  await saveFile(blob,name);
+  $('elInvStatus').textContent='Export prêt : '+name+'. Sur Android, sélectionne Fichiers / Drive / Bluetooth dans le menu de partage.';
+ }catch(e){console.error('Export inventaire',e);$('elInvStatus').textContent='Export impossible : '+(e.message||e)}
 }
-function template(){
- const rows=[['Code','Produit','Catégorie','Unité','Quantité théorique'],['P001','Saumon','Poisson','kg','12'],['P002','Crème','Crèmerie','L','8'],['P003','Œufs','Économat','pièce','60']];
- download(new Blob([csv(rows)],{type:'text/csv;charset=utf-8'}),'Modele_Inventaire_Lorraine.csv');
+async function template(){
+ try{
+  const rows=[['Code','Produit','Catégorie','Unité','Quantité théorique'],['P001','Saumon','Poisson','kg','12'],['P002','Crème','Crèmerie','L','8'],['P003','Œufs','Économat','pièce','60']];
+  await saveFile(new Blob([csv(rows)],{type:'text/csv;charset=utf-8'}),'Modele_Inventaire_Lorraine.csv');
+  $('elInvStatus').textContent='Modèle prêt à enregistrer ou partager.';
+ }catch(e){$('elInvStatus').textContent='Modèle impossible : '+(e.message||e)}
 }
 function parseRows(rows){
  if(!rows.length)throw Error('Fichier vide');
