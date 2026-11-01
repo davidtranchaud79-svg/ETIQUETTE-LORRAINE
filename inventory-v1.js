@@ -120,6 +120,7 @@ function init(){
  $('elInvAdd').addEventListener('click',()=>applyCount('add'));
  $('elInvSet').addEventListener('click',()=>applyCount('set'));
  $('elInvQty').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyCount('add')}});
+ $('elInvChooseFile').addEventListener('click',()=>{try{$('elInvImport').click()}catch(e){$('elInvStatus').textContent='Sélection du fichier impossible : '+e.message}});
  $('elInvExport').addEventListener('click',exportData);
  $('elInvTemplate').addEventListener('click',template);
  $('elInvCopy').addEventListener('click',()=>{
