@@ -155,5 +155,6 @@ function init(){
  document.querySelectorAll('.nav-btn[data-target="inventory"]').forEach(b=>b.addEventListener('click',()=>{renderList();renderEditor()}));
  renderList();renderEditor();
 }
+window.ELNativeSaveFile=saveFile;
 window.ELInventoryInit=init;
 })();
