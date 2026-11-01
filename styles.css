@@ -17,3 +17,6 @@
 
 /* Inventaire mensuel */
 .el-inv-list{max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:12px}.el-inv-product{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);padding:12px;color:inherit;cursor:pointer}.el-inv-product:last-child{border-bottom:0}.el-inv-product.selected{background:var(--soft)}.el-inv-product span:first-child{flex:1;min-width:0}.el-inv-product strong{display:block;font-size:14px;overflow-wrap:anywhere}.el-inv-product small{display:block;color:var(--muted);font-size:11px;margin-top:4px}.el-inv-count{text-align:right;white-space:nowrap;font-size:13px;font-weight:700}.el-inv-history{font-size:11px;line-height:1.5;white-space:pre-wrap;color:var(--muted);font-family:inherit}
+
+/* Android : sélecteur de fichier inventaire accessible au toucher */
+.el-inv-file-input{display:block;width:100%;font-size:13px;max-width:100%;margin:8px 0 4px;color:var(--muted)}
