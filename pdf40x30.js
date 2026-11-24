@@ -30,8 +30,9 @@
 
     const mode=(l.type||'PRODUCTION').toUpperCase();
     const modeY=lines.length===1?H-28.2*s:Math.max(H-35.3*s,y-0.2*s);
-    const modeSize=fitSize(mode,inner,6.2*s,4.7*s,true);
-    c+=text(m,modeY,modeSize,'F1',mode);
+    const modeText=mode+(l.pax?' · '+l.pax+' PAX':'');
+    const modeSize=fitSize(modeText,inner,6.2*s,4.7*s,true);
+    c+=text(m,modeY,modeSize,'F1',modeText);
 
     const dividerY=H-39.2*s;
     c+=`${m.toFixed(2)} ${dividerY.toFixed(2)} ${inner.toFixed(2)} 0 l S\n`;
