@@ -50,7 +50,8 @@
     ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
     ctx.fillStyle='#000';ctx.strokeStyle='#000';ctx.lineCap='butt';
     const m=Math.max(8,Math.round(width*0.025));
-    const right=width-m,usable=width-2*m;
+    // Marge de sécurité à droite : le CT321D observé décale le raster vers la droite.
+    const right=width-Math.max(m,Math.round(width*0.13)),usable=right-m;
     const fit=function(value,maxWidth,start,min,weight){
       let size=start;
       while(size>min){ctx.font=weight+' '+size+'px Arial, sans-serif';if(ctx.measureText(value).width<=maxWidth)break;size--}
@@ -63,7 +64,7 @@
       while(out.length>1&&ctx.measureText(out+'…').width>maxWidth)out=out.slice(0,-1);
       return out.trimEnd()+'…';
     };
-    ctx.lineWidth=1.5;ctx.strokeRect(2,2,width-4,height-4);
+    ctx.lineWidth=1.5;ctx.strokeRect(2,2,right-2,height-4);
 
     const product=String(label.product||'PRODUIT').toUpperCase().trim();
     const titleMax=Math.round(height*0.39),titleStart=m+5;
@@ -90,10 +91,13 @@
       ctx.fillText(value,m,titleStart+titleSize+i*(titleSize+3));
     });
     const divider=Math.round(height*0.42);
+    const mode=ascii(label.type||'').toUpperCase();
+    const titleEnd=titleStart+titleSize+(Math.min(result.length,2)-1)*(titleSize+3);
+    if(mode&&divider-titleEnd>=15){const ms=fit(mode,usable,13,9,'700');ctx.font='700 '+ms+'px Arial, sans-serif';ctx.fillText(shorten(mode,usable,ms,'700'),m,divider-4);}
     ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(m,divider);ctx.lineTo(right,divider);ctx.stroke();
 
     const top=divider+Math.round(height*0.035);
-    const col2=Math.round(width*0.53),gap=12;
+    const col2=m+Math.round(usable*0.53),gap=10;
     const labelSize=clamp(Math.round(height*0.058),10,14);
     const dateStart=clamp(Math.round(height*0.118),19,27);
     const leftDate=ascii(label.date||'--/--/----');
@@ -102,10 +106,10 @@
     ctx.font='700 '+labelSize+'px Arial, sans-serif';
     if(label.singleDate){
       const title=ascii(label.dateLabel||'OUVERT LE');
-      ctx.fillText(title,(width-ctx.measureText(title).width)/2,top+labelSize);
+      ctx.fillText(title,m+(usable-ctx.measureText(title).width)/2,top+labelSize);
       const ds=fit(leftDate,usable,dateStart+3,15,'900');
       ctx.font='900 '+ds+'px Arial, sans-serif';
-      ctx.fillText(leftDate,(width-ctx.measureText(leftDate).width)/2,baseline);
+      ctx.fillText(leftDate,m+(usable-ctx.measureText(leftDate).width)/2,baseline);
     }else{
       const leftW=col2-m-gap,rightW=right-col2;
       ctx.fillText(shorten(ascii(label.dateLabel||'PROD. LE'),leftW,labelSize,'700'),m,top+labelSize);
@@ -119,22 +123,22 @@
 
     const footerTop=Math.round(height*0.76),footerBottom=height-m-3;
     ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(m,footerTop);ctx.lineTo(right,footerTop);ctx.stroke();
-    const sep1=Math.round(width*0.35),sep2=Math.round(width*0.73);
+    const sep1=m+Math.round(usable*0.34),sep2=m+Math.round(usable*0.72);
     ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sep1,footerTop+3);ctx.lineTo(sep1,footerBottom+2);ctx.moveTo(sep2,footerTop+3);ctx.lineTo(sep2,footerBottom+2);ctx.stroke();
     const small=clamp(Math.round(height*0.05),10,13);
     const strong=clamp(Math.round(height*0.071),13,18);
     ctx.font='700 '+small+'px Arial, sans-serif';ctx.fillText('LOT',m,footerTop+small+4);
-    if(label.pax){const pax=String(label.pax)+' PAX',pw=sep2-sep1-12,ps=fit(pax,pw,small,9,'900');ctx.font='900 '+ps+'px Arial, sans-serif';ctx.fillText(pax,sep1+6+(pw-ctx.measureText(pax).width)/2,footerTop+small+4);}
-    const lot=ascii(label.lot||'-'),lotW=sep1-m-7;
+    if(label.pax){const pax=String(label.pax)+' PAX',pw=sep2-sep1-12,ps=fit(pax,pw,strong+3,10,'900');ctx.font='900 '+ps+'px Arial, sans-serif';const py=label.storage?footerTop+ps+3:footerTop+Math.round((footerBottom-footerTop+ps)/2);ctx.fillText(pax,sep1+6+(pw-ctx.measureText(pax).width)/2,py);}
+    const lot=ascii(label.lot||''),lotW=sep1-m-7;
     const lotSize=fit(lot,lotW,strong,10,'900');
     ctx.font='900 '+lotSize+'px Arial, sans-serif';
     ctx.fillText(shorten(lot,lotW,lotSize,'900'),m,footerBottom);
-    const storage=ascii(label.storage||'-'),storageW=sep2-sep1-12;
+    const storage=ascii(label.storage||''),storageW=sep2-sep1-12;
     const storageSize=fit(storage,storageW,strong,10,'700');
     ctx.font='700 '+storageSize+'px Arial, sans-serif';
     const st=shorten(storage,storageW,storageSize,'700');
     ctx.fillText(st,sep1+6+(storageW-ctx.measureText(st).width)/2,footerBottom);
-    const initials=ascii(label.initials||'-').toUpperCase(),initialsW=right-sep2-8;
+    const initials=ascii(label.initials||'').toUpperCase(),initialsW=right-sep2-8;
     const initialsSize=fit(initials,initialsW,strong,10,'900');
     ctx.font='900 '+initialsSize+'px Arial, sans-serif';
     const it=shorten(initials,initialsW,initialsSize,'900');
@@ -182,7 +186,7 @@
       let copies=1;
       while(i+copies<labels.length && JSON.stringify(labels[i+copies])===key)copies++;
       const canvas=drawLabel(label,fmt),mono=canvasMonoBytes(canvas);
-      const head=utf8Bytes('SIZE '+fmt.widthMm+' mm,'+fmt.heightMm+' mm\r\nGAP 2 mm,0 mm\r\nDENSITY 8\r\nDIRECTION 1\r\nCLS\r\nBITMAP 0,0,'+mono.widthBytes+','+mono.height+',0,');
+      const head=utf8Bytes('SIZE '+fmt.widthMm+' mm,'+fmt.heightMm+' mm\r\nGAP 2 mm,0 mm\r\nDENSITY 8\r\nDIRECTION 1\r\nREFERENCE 0,0\r\nCLS\r\nBITMAP 0,0,'+mono.widthBytes+','+mono.height+',0,');
       const tail=utf8Bytes('\r\nPRINT 1,'+copies+'\r\n');
       jobs.push(concatBytes([head,mono.bytes,tail]));
       i+=copies;
