@@ -124,6 +124,7 @@
     const small=clamp(Math.round(height*0.05),10,13);
     const strong=clamp(Math.round(height*0.071),13,18);
     ctx.font='700 '+small+'px Arial, sans-serif';ctx.fillText('LOT',m,footerTop+small+4);
+    if(label.pax){const pax=String(label.pax)+' PAX',pw=sep2-sep1-12,ps=fit(pax,pw,small,9,'900');ctx.font='900 '+ps+'px Arial, sans-serif';ctx.fillText(pax,sep1+6+(pw-ctx.measureText(pax).width)/2,footerTop+small+4);}
     const lot=ascii(label.lot||'-'),lotW=sep1-m-7;
     const lotSize=fit(lot,lotW,strong,10,'900');
     ctx.font='900 '+lotSize+'px Arial, sans-serif';
