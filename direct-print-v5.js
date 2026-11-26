@@ -288,7 +288,7 @@
     if(printerConnected&&!force){try{const d=await pluginCall('diagnostics',{});if(d?.connected!==false)return true}catch(_){}updateDirectButtons(false)}
     if(!savedAddress()||!autoEnabled())throw Error('Connecte d’abord l’imprimante dans les réglages');
     connectPending=(async()=>{statusText('Reconnexion Bluetooth…');try{await connectPrinter(savedAddress(),localStorage.getItem('el.nativePrinterTransport')||'auto');updateDirectButtons(true);statusText('Connectée : '+(localStorage.getItem('el.nativePrinterName')||'CLABEL'));return true}catch(e){updateDirectButtons(false);statusText('Imprimante indisponible — allume-la puis réessaie');throw e}})();
-    try{return await connectPending}finally{connectPending=null}
+    try{return await connectPending}finally{connectPending=null;updateDirectButtons(printerConnected)}
   }
   function beginPrint(){if(printBusy||Date.now()-lastSendAt<1500){toast('Impression déjà en cours ou envoyée');return false}printBusy=true;updateDirectButtons(printerConnected);return true}
   function endPrint(){lastSendAt=Date.now();printBusy=false;updateDirectButtons(printerConnected)}
