@@ -248,9 +248,11 @@
       card.querySelector('#testNativePrinter').addEventListener('click',testUI);
       card.querySelector('#diagNativePrinter').addEventListener('click',diagnosticsUI);
       card.querySelector('#disconnectNativePrinter').addEventListener('click',disconnectUI);
-      restoreNativeSelection();
       addDirectPrintButton();
       addDirectBatchButton();
+      updateDirectButtons(false);
+      restoreNativeSelection();
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!printBusy&&autoEnabled()&&savedAddress())ensureConnected().catch(()=>{})});
     }
   }
 
@@ -271,43 +273,60 @@
     b.disabled=true;
     b.addEventListener('click',printBatchDirect);
     pdfBtn.insertAdjacentElement('beforebegin',b);
-    const update=()=>{if(!b.dataset.busy)b.disabled=!printerConnected||!state.batch?.length};
+    const update=()=>{b.disabled=!canPrint()||!state.batch?.length};
     const list=document.getElementById('batchList');
     if(list)new MutationObserver(update).observe(list,{childList:true,subtree:true});
     update();
   }
-  let printerConnected=false;
+  let printerConnected=false,printBusy=false,connectPending=null,lastSendAt=0;
+  const savedAddress=()=>localStorage.getItem('el.nativePrinterAddress');
+  const autoEnabled=()=>localStorage.getItem('el.nativePrinterAuto')!=='off';
+  function statusText(t){const e=document.getElementById('nativePrintStatus');if(e)e.textContent=t}
+  function canPrint(){return !printBusy&&(printerConnected||!!(savedAddress()&&autoEnabled()))}
+  async function ensureConnected(force=false){
+    if(connectPending)return connectPending;
+    if(printerConnected&&!force){try{const d=await pluginCall('diagnostics',{});if(d?.connected!==false)return true}catch(_){}updateDirectButtons(false)}
+    if(!savedAddress()||!autoEnabled())throw Error('Connecte d’abord l’imprimante dans les réglages');
+    connectPending=(async()=>{statusText('Reconnexion Bluetooth…');try{await connectPrinter(savedAddress(),localStorage.getItem('el.nativePrinterTransport')||'auto');updateDirectButtons(true);statusText('Connectée : '+(localStorage.getItem('el.nativePrinterName')||'CLABEL'));return true}catch(e){updateDirectButtons(false);statusText('Imprimante indisponible — allume-la puis réessaie');throw e}})();
+    try{return await connectPending}finally{connectPending=null}
+  }
+  function beginPrint(){if(printBusy||Date.now()-lastSendAt<1500){toast('Impression déjà en cours ou envoyée');return false}printBusy=true;updateDirectButtons(printerConnected);return true}
+  function endPrint(){lastSendAt=Date.now();printBusy=false;updateDirectButtons(printerConnected)}
   function updateDirectButtons(connected){
     printerConnected=connected;
     const single=document.getElementById('directNativePrintBtn');
-    if(single&&!single.dataset.busy)single.disabled=!connected;
+    if(single)single.disabled=!canPrint();
     const batch=document.getElementById('directNativeBatchBtn');
-    if(batch&&!batch.dataset.busy)batch.disabled=!connected||!state.batch?.length;
+    if(batch)batch.disabled=!canPrint()||!state.batch?.length;
+    for(const id of ['testNativePrinter','connectNativePrinter','disconnectNativePrinter','scanNativePrinters']){const e=document.getElementById(id);if(e)e.disabled=printBusy||!!connectPending}
   }
   async function printBatchDirect(){
     if(!state.batch?.length)return toast('Ajoute des produits au lot avant de lancer l’impression');
-    if(!printerConnected)return toast('Connecte d’abord l’imprimante CLABEL dans les réglages');
+    if(!beginPrint())return;
     const btn=document.getElementById('directNativeBatchBtn');
     const items=state.batch.map(x=>({...x}));
     const labels=expanded(items);
     try{
       if(btn){btn.dataset.busy='1';btn.disabled=true;btn.textContent='Impression du lot en cours…'}
+      await ensureConnected();
       await printLabelsDirect(labels);
       await recordHistory(items,labels.length,'Lot Bluetooth direct');
       await window.ELDlcReminders?.track?.(items,'Bluetooth');
       toast(labels.length+' étiquette(s) du lot envoyée(s) en Bluetooth');
     }catch(e){
       console.error('Impression lot Bluetooth',e);
-      toast('Échec du lot Bluetooth : '+(e.message||'vérifie la connexion'));
+      updateDirectButtons(false);toast('Envoi non confirmé : vérifie les étiquettes avant de relancer.');
     }finally{
       if(btn){delete btn.dataset.busy;btn.textContent='Imprimer le lot directement en Bluetooth'}
-      updateDirectButtons(printerConnected);
+      endPrint();
     }
   }
 
   async function restoreNativeSelection(){
     const saved=localStorage.getItem('el.nativePrinterAddress');if(!saved)return;
-    try{populateDevices(document.getElementById('nativePrinterSelect'),await listPrinters(),saved)}catch(_){}
+    const device={address:saved,name:localStorage.getItem('el.nativePrinterName')||'CLABEL',transport:localStorage.getItem('el.nativePrinterTransport')||'auto'};
+    populateDevices(document.getElementById('nativePrinterSelect'),[device],saved);
+    if(autoEnabled())try{await ensureConnected()}catch(_){}
   }
   function populateDevices(sel,devices,selected){
     if(!sel)return;selected=selected||'';
@@ -328,16 +347,19 @@
   async function connectUI(){
     const sel=document.getElementById('nativePrinterSelect'),status=document.getElementById('nativePrintStatus');
     if(!sel||!sel.value)return toast('Choisis une imprimante');
+    if(printBusy||connectPending)return;
     const d=JSON.parse(decodeURIComponent(sel.value));if(status)status.textContent='Connexion à '+d.name+'…';
     try{
-      await connectPrinter(d.address,d.transport);localStorage.setItem('el.nativePrinterAddress',d.address);localStorage.setItem('el.nativePrinterName',d.name||'CLABEL');
+      connectPending=connectPrinter(d.address,d.transport);await connectPending;localStorage.setItem('el.nativePrinterAuto','on');localStorage.setItem('el.nativePrinterTransport',d.transport||'auto');localStorage.setItem('el.nativePrinterAddress',d.address);localStorage.setItem('el.nativePrinterName',d.name||'CLABEL');
       if(status)status.textContent='Connectée : '+(d.name||d.address);
       updateDirectButtons(true);toast('Imprimante CLABEL connectée');
-    }catch(e){if(status)status.textContent='Connexion impossible : '+e.message;toast('Connexion imprimante impossible')}
+    }catch(e){if(status)status.textContent='Connexion impossible : '+e.message;toast('Connexion imprimante impossible');updateDirectButtons(false)}finally{connectPending=null;updateDirectButtons(printerConnected)}
   }
   async function testUI(){
+    if(!beginPrint())return;
     const status=document.getElementById('nativePrintStatus');
     try{
+      await ensureConnected();
       if(status)status.textContent='Test 50 × 30 en cours…';
       const sample={product:'TEST CLABEL',type:'PRODUCTION',date:'19/09/2026',dlc:'20/09/2026',detail:'',lot:'TEST',initials:'DT',storage:'+0/+3 °C',dateLabel:'PROD. LE',expiryLabel:'DLC'};
       const fmt={widthMm:50,heightMm:30},job=tsplJob([sample],fmt);
@@ -347,8 +369,8 @@
       return result;
     }catch(e){
       if(status)status.textContent='Test impossible : '+e.message;
-      toast('Test Bluetooth impossible');
-    }
+      updateDirectButtons(false);toast('Test non confirmé : vérifie le papier avant de relancer');
+    }finally{endPrint()}
   }
 
   async function diagnosticsUI(){
@@ -366,17 +388,19 @@
   }
 
   async function disconnectUI(){
+    if(printBusy||connectPending)return;localStorage.setItem('el.nativePrinterAuto','off');
     await disconnectPrinter();const status=document.getElementById('nativePrintStatus');if(status)status.textContent='Imprimante déconnectée.';
     updateDirectButtons(false);
   }
   async function printCurrentDirect(){
     const x=currentItem();if(x.error)return toast(x.error);
+    if(!beginPrint())return;
     const labels=expanded([x]),btn=document.getElementById('directNativePrintBtn');
     try{
-      if(btn){btn.disabled=true;btn.textContent='Impression…'}await printLabelsDirect(labels);await recordHistory([x],labels.length,'Bluetooth direct');await window.ELDlcReminders?.track?.([x],'Bluetooth');
+      if(btn){btn.disabled=true;btn.textContent='Impression…'}await ensureConnected();await printLabelsDirect(labels);await recordHistory([x],labels.length,'Bluetooth direct');await window.ELDlcReminders?.track?.([x],'Bluetooth');
       toast(labels.length+' étiquette'+(labels.length>1?'s':'')+' envoyée'+(labels.length>1?'s':''));
-    }catch(e){console.error(e);toast('Impression directe impossible — utilise le PDF de secours')}
-    finally{if(btn){btn.disabled=false;btn.textContent='Imprimer directement en Bluetooth'}}
+    }catch(e){console.error(e);updateDirectButtons(false);toast('Envoi non confirmé : vérifie les étiquettes avant de relancer')}
+    finally{if(btn){btn.textContent='Imprimer directement en Bluetooth'}endPrint()}
   }
 
   window.initDirectPrint=async function(){installUI()};
